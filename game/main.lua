@@ -12,7 +12,7 @@ function love.load()
         require("load")()
     end
     Board1 = Board
-    Board1:new(290,10,8,700)
+    Board1:new(315,35,8,650)
 end
 
 function love.update(dt)
@@ -33,8 +33,12 @@ function love.gamepadpressed(joystick, button)
     end
 end
 
-function love.keypressed(k)
-    Board1:new(290,10,8,700)
+function love.touchpressed(id,x,y)
+    Board1:pressed(x,y)
+end
+
+function love.touchreleased(id,x,y)
+    Board1:released(x,y)
 end
 
 function love.mousepressed(x,y)

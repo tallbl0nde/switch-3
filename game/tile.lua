@@ -1,12 +1,8 @@
 --newTile: called to initalise and return a new tile
-function new_tile()
+function new_tile(state)
     local t = {}
     -- states:
-    -- 0: normal
-    -- 1: charged (bomb)
-    -- 2: vertical
-    -- 3: horizontal
-    t.state = 0
+    t.state = state or ""
     -- offset (y in percent from -1 to 1)
     t.offset = 0
     local col = love.math.random(1,7)
@@ -25,6 +21,6 @@ function new_tile()
     elseif (col == 7) then
         t.type = "white"
     end
-    t.img = _G["tile_"..t.type]
+    t.img = _G["tile_"..t.type..t.state]
     return t
 end

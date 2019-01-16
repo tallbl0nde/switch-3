@@ -37,6 +37,8 @@ function Board:new(x,y,grid_size,s)
             end
         end
     end
+
+    self.score = 0
 end
 
 function Board:update(dt)
@@ -115,6 +117,10 @@ end
 
 --Handles stuff when the board is pressed
 function Board:pressed(absX,absY)
+    if (self.no_matches) then
+        self:shuffle()
+        self:analyse()
+    end
     if (absX < self.x or absY < self.y or absX > (self.x + self.size) or absY > (self.y + self.size)) then
         self.touch_start = nil
         return
@@ -180,19 +186,6 @@ end
 
 --Called after each tile movement to check for matches
 function Board:analyse()
-    --Check if a shuffle is required and do if necessary
-    --[[ local matches = 0
-    for x=1,self.grid_size do
-        for y=1,self.grid_size do
-            if (self:matchAt(x,y) == true) then
-                matches = matches + 1
-            end
-        end
-    end
-    if (matches == 0) then
-        self:shuffle()
-    end]]
-
     --Remove matched tiles
     --Stores coordinates of matched tiles
     local match = {}
@@ -216,9 +209,120 @@ function Board:analyse()
     if (#match ~= 0) then
         self:analyse()
     end
+
+    --Check if a shuffle is required and do if necessary
+    self.no_matches = true
+    --Case 1: horizontal consecutive
+    local check = {{-1,-1},{-2,0},{-1,1},{2,-1},{3,0},{2,1}} --(coords from left tile)
+    for x=1,self.grid_size-1 do
+        for y=1,self.grid_size do
+            if (self.tiles[x][y].type == self.tiles[x+1][y].type) then
+                --Check adjacent tiles
+                for i=1,#check do
+                    local X = x+check[i][1]
+                    local Y = y+check[i][2]
+                    if (X < 1 or X > self.grid_size or Y < 1 or Y > self.grid_size) then
+                    else
+                        if (self.tiles[x][y].type == self.tiles[X][Y].type) then
+                            self.no_matches = false
+                        end
+                    end
+                end
+            end
+        end
+    end
+    --Case 2: vertical consecutive
+    local check = {{-1,-1},{1,-1},{0,-2},{1,2},{-1,2},{0,3}} --(coords from top tile)
+    for x=1,self.grid_size do
+        for y=1,self.grid_size-1 do
+            if (self.tiles[x][y].type == self.tiles[x][y+1].type) then
+                --Check adjacent tiles
+                for i=1,#check do
+                    local X = x+check[i][1]
+                    local Y = y+check[i][2]
+                    if (X < 1 or X > self.grid_size or Y < 1 or Y > self.grid_size) then
+                    else
+                        if (self.tiles[x][y].type == self.tiles[X][Y].type) then
+                            self.no_matches = false
+                        end
+                    end
+                end
+            end
+        end
+    end
+    --Case 3: horizontal adjacent
+    local check = {{1,-1},{1,1}} --(coords from left tile)
+    for x=1,self.grid_size-2 do
+        for y=1,self.grid_size do
+            if (self.tiles[x][y].type == self.tiles[x+2][y].type) then
+                --Check adjacent tiles
+                for i=1,#check do
+                    local X = x+check[i][1]
+                    local Y = y+check[i][2]
+                    if (X < 1 or X > self.grid_size or Y < 1 or Y > self.grid_size) then
+                    else
+                        if (self.tiles[x][y].type == self.tiles[X][Y].type) then
+                            self.no_matches = false
+                        end
+                    end
+                end
+            end
+        end
+    end
+    --Case 4: vertical adjacent
+    local check = {{1,1},{-1,1}} --(coords from top tile)
+    for x=1,self.grid_size do
+        for y=1,self.grid_size-2 do
+            if (self.tiles[x][y].type == self.tiles[x][y+2].type) then
+                --Check adjacent tiles
+                for i=1,#check do
+                    local X = x+check[i][1]
+                    local Y = y+check[i][2]
+                    if (X < 1 or X > self.grid_size or Y < 1 or Y > self.grid_size) then
+                    else
+                        if (self.tiles[x][y].type == self.tiles[X][Y].type) then
+                            self.no_matches = false
+                        end
+                    end
+                end
+            end
+        end
+    end
+    --Case 5: special gems
+    --TODO
+
 end
 
 --Called to shuffle the board
 function Board:shuffle()
+    --Copy tiles and wipe table
+    local copies = {}
+    for x=1,self.grid_size do
+        copies[x] = {}
+        for y=1,self.grid_size do
+            copies[x][y] = copyTable(self.tiles[x][y])
+            self.tiles[x][y] = nil
+        end
+    end
+
+    --Populate table randomly from copies
+    local X = self.grid_size
+    local Y = self.grid_size
+    while (#copies > 0) do
+        print(X,Y,#copies)
+        local ranX
+        local ranY
+        repeat
+            ranX = love.math.random(1,self.grid_size)
+            ranY = love.math.random(1,self.grid_size)
+        until (self.tiles[ranX][ranY] == nil)
+        self.tiles[ranX][ranY] = copyTable(copies[X][Y])
+        Y = Y - 1
+        if (Y == 0) then
+            Y = self.grid_size
+            copies[X] = nil
+            X = X - 1
+        end
+    end
 
 end

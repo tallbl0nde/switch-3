@@ -5,6 +5,8 @@ function new_tile(state)
     t.state = state or ""
     -- offset (y in percent from -1 to 1)
     t.offset = 0
+    -- velocity of gem (when falling)
+    t.velocity = 0
     local col = love.math.random(1,7)
     if (col == 1) then
         t.type = "red"

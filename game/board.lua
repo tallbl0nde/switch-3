@@ -38,11 +38,28 @@ function Board:new(x,y,grid_size,s)
         end
     end
 
+    self.isAnimated = false
     self.score = 0
 end
 
 function Board:update(dt)
-
+    --Falling animation stuff
+    self.isAnimated = false
+    for x=1,self.grid_size do
+        for y=1,self.grid_size do
+            if (self.tiles[x][y].offset < 0) then
+                self.isAnimated = true
+                self.tiles[x][y].velocity = self.tiles[x][y].velocity *(1+5*dt)
+                self.tiles[x][y].offset = self.tiles[x][y].offset + self.tiles[x][y].velocity
+            end
+            if (self.tiles[x][y].offset > 0) then
+                self.tiles[x][y].offset = 0
+            end
+        end
+    end
+    if (self.isAnimated == false) then
+        self:analyse()
+    end
 end
 
 -- Draw the board with (x,y) being the top left corner
@@ -121,7 +138,7 @@ function Board:pressed(absX,absY)
         self:shuffle()
         self:analyse()
     end
-    if (absX < self.x or absY < self.y or absX > (self.x + self.size) or absY > (self.y + self.size)) then
+    if (absX < self.x or absY < self.y or absX > (self.x + self.size) or absY > (self.y + self.size) or self.isAnimated) then
         self.touch_start = nil
         return
     end
@@ -186,7 +203,6 @@ end
 
 --Called after each tile movement to check for matches
 function Board:analyse()
-    --Remove matched tiles
     --Stores coordinates of matched tiles
     local match = {}
     for x=1,self.grid_size do
@@ -197,17 +213,20 @@ function Board:analyse()
         end
     end
 
-    --Remove matched tiles
+    --Remove matched tiles (and set the animations)
     for i=1,#match do
         for j=match[i][2],2,-1 do
             self.tiles[match[i][1]][j] = copyTable(self.tiles[match[i][1]][j-1])
+            self.tiles[match[i][1]][j].offset = self.tiles[match[i][1]][j].offset - 1
+            self.tiles[match[i][1]][j].velocity = 0.03 - (0.002*(match[i][2]-j))
         end
         self.tiles[match[i][1]][1] = new_tile()
-    end
-
-    --Reanalyse the board if necessary??
-    if (#match ~= 0) then
-        self:analyse()
+        if (self.tiles[match[i][1]][2].offset == 0) then
+            self.tiles[match[i][1]][1].offset = -1.5
+        else
+            self.tiles[match[i][1]][1].offset = self.tiles[match[i][1]][2].offset - 0.5
+        end
+        self.tiles[match[i][1]][1].velocity = self.tiles[match[i][1]][2].velocity  - 0.002
     end
 
     --Check if a shuffle is required and do if necessary

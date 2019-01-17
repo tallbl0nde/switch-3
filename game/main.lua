@@ -16,6 +16,7 @@ function love.load()
 end
 
 function love.update(dt)
+    Board1:update(dt)
     updateDebug(dt)
 end
 

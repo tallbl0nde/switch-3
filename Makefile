@@ -45,7 +45,7 @@ BUILD           := $(TOPDIR)
 
 ROMFS           := game
 
-APP_TITLE       := bejeweled
+APP_TITLE       := Switch³
 APP_AUTHOR      := tallbl0nde
 APP_TITLEID     := 1102
 APP_VERSION     := dev

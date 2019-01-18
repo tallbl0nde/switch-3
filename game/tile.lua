@@ -7,6 +7,8 @@ function new_tile(state)
     t.offset = 0
     -- velocity of gem (when falling)
     t.velocity = 0
+    -- variables for swapping animations
+    t.swap = {x = 0, y = 0}
     local col = love.math.random(1,7)
     if (col == 1) then
         t.type = "red"

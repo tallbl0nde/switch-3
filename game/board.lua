@@ -43,10 +43,11 @@ function Board:new(x,y,grid_size,s)
 end
 
 function Board:update(dt)
-    --Falling animation stuff
+    --Animation stuff
     self.isAnimated = false
     for x=1,self.grid_size do
         for y=1,self.grid_size do
+            --Falling animation stuff
             if (self.tiles[x][y].offset < 0) then
                 self.isAnimated = true
                 self.tiles[x][y].velocity = self.tiles[x][y].velocity *(1+5*dt)
@@ -55,8 +56,38 @@ function Board:update(dt)
             if (self.tiles[x][y].offset > 0) then
                 self.tiles[x][y].offset = 0
             end
+            --Swipe animation
+            if (self.tiles[x][y].swap.x > 0) then
+                self.isAnimated = true
+                self.tiles[x][y].swap.x = self.tiles[x][y].swap.x - 0.08
+                if (self.tiles[x][y].swap.x < 0) then
+                    self.tiles[x][y].swap.x = 0
+                end
+            end
+            if (self.tiles[x][y].swap.x < 0) then
+                self.isAnimated = true
+                self.tiles[x][y].swap.x = self.tiles[x][y].swap.x + 0.08
+                if (self.tiles[x][y].swap.x > 0) then
+                    self.tiles[x][y].swap.x = 0
+                end
+            end
+            if (self.tiles[x][y].swap.y > 0) then
+                self.isAnimated = true
+                self.tiles[x][y].swap.y = self.tiles[x][y].swap.y - 0.08
+                if (self.tiles[x][y].swap.y < 0) then
+                    self.tiles[x][y].swap.y = 0
+                end
+            end
+            if (self.tiles[x][y].swap.y < 0) then
+                self.isAnimated = true
+                self.tiles[x][y].swap.y = self.tiles[x][y].swap.y + 0.08
+                if (self.tiles[x][y].swap.y > 0) then
+                    self.tiles[x][y].swap.y = 0
+                end
+            end
         end
     end
+    --Analyse the board if gems aren't moving
     if (self.isAnimated == false) then
         self:analyse()
     end
@@ -76,7 +107,7 @@ function Board:draw()
     local sz2 = self.size/self.grid_size
     for x=1,self.grid_size do
         for y=1,self.grid_size do
-            love.graphics.draw(self.tiles[x][y].img,(x-1)*(sz2),(y-1+self.tiles[x][y].offset)*(sz2),0,sz2/self.tiles[x][y].img:getWidth(),sz2/self.tiles[x][y].img:getHeight())
+            love.graphics.draw(self.tiles[x][y].img,(x-1+self.tiles[x][y].swap.x)*(sz2),(y-1+self.tiles[x][y].offset+self.tiles[x][y].swap.y)*(sz2),0,sz2/self.tiles[x][y].img:getWidth(),sz2/self.tiles[x][y].img:getHeight())
         end
     end
     --Pop old coordinates
@@ -170,28 +201,34 @@ function Board:released(absX,absY)
     if (dy < 0 and self.touch_start.ty > 1) then
         if ( ( (dx >= 0 and math.atan(dx/-dy) < (math.pi/6)) or (dx < 0 and math.atan(dx/-dy) > -(math.pi/6)) ) and (len > thr) ) then
             self:swapTiles(self.touch_start.tx,self.touch_start.ty-1,self.touch_start.tx,self.touch_start.ty)
+            self.tiles[self.touch_start.tx][self.touch_start.ty-1].swap.y = 1
+            self.tiles[self.touch_start.tx][self.touch_start.ty].swap.y = -1
         end
     end
     --Swipe down
     if (dy > 0 and self.touch_start.ty < self.grid_size) then
         if ( ( (dx >= 0 and math.atan(dx/-dy) > -(math.pi/6)) or (dx < 0 and math.atan(dx/-dy) < (math.pi/6)) ) and (len > thr) ) then
             self:swapTiles(self.touch_start.tx,self.touch_start.ty+1,self.touch_start.tx,self.touch_start.ty)
+            self.tiles[self.touch_start.tx][self.touch_start.ty+1].swap.y = -1
+            self.tiles[self.touch_start.tx][self.touch_start.ty].swap.y = 1
         end
     end
     --Swipe right
     if (dx > 0 and self.touch_start.tx < self.grid_size) then
         if ( ( (dy < 0 and math.atan(-dy/dx) < (math.pi/6)) or (dy >= 0 and math.atan(-dy/dx) > -(math.pi/6)) ) and (len > thr) ) then
             self:swapTiles(self.touch_start.tx+1,self.touch_start.ty,self.touch_start.tx,self.touch_start.ty)
+            self.tiles[self.touch_start.tx][self.touch_start.ty].swap.x = 1
+            self.tiles[self.touch_start.tx+1][self.touch_start.ty].swap.x = -1
         end
     end
     --Swipe left
     if (dx < 0 and self.touch_start.tx > 1) then
         if ( ( (dy < 0 and math.atan(-dy/dx) > -(math.pi/6)) or (dy >= 0 and math.atan(-dy/dx) < (math.pi/6)) ) and (len > thr) ) then
             self:swapTiles(self.touch_start.tx-1,self.touch_start.ty,self.touch_start.tx,self.touch_start.ty)
+            self.tiles[self.touch_start.tx-1][self.touch_start.ty].swap.x = 1
+            self.tiles[self.touch_start.tx][self.touch_start.ty].swap.x = -1
         end
     end
-    --Analyse the board for matches
-    self:analyse()
 end
 
 --Swap two tiles at the provided coordinates
@@ -226,7 +263,10 @@ function Board:analyse()
         else
             self.tiles[match[i][1]][1].offset = self.tiles[match[i][1]][2].offset - 0.5
         end
-        self.tiles[match[i][1]][1].velocity = self.tiles[match[i][1]][2].velocity  - 0.002
+        self.tiles[match[i][1]][1].velocity = self.tiles[match[i][1]][2].velocity - 0.002
+        if (self.tiles[match[i][1]][1].velocity < 0) then
+            self.tiles[match[i][1]][1].velocity = 0.03
+        end
     end
 
     --Check if a shuffle is required and do if necessary

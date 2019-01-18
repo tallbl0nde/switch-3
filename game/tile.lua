@@ -1,5 +1,5 @@
 --newTile: called to initalise and return a new tile
-function new_tile(state)
+function new_tile(type,state)
     local t = {}
     -- states:
     t.state = state or ""
@@ -9,6 +9,10 @@ function new_tile(state)
     t.velocity = 0
     -- variables for swapping animations
     t.swap = {x = 0, y = 0}
+    t.swapped = false
+    -- variables for disappear animation
+    t.size = 1
+    t.matched = false
     local col = love.math.random(1,7)
     if (col == 1) then
         t.type = "red"

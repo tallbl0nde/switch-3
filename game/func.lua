@@ -13,3 +13,12 @@ function copyTable(t)
     end
     return ret
 end
+
+--Draw a image centered at (x,y)
+function centeredImage(img,x,y,sx,sy)
+    local sx = sx or 1
+    local sy = sy or 1
+    local X = round(x-(sx*img:getWidth())/2)
+    local Y = round(y-(sy*img:getHeight())/2)
+    love.graphics.draw(img,X,Y,0,sx,sy)
+end

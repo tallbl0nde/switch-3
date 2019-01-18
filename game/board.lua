@@ -1,10 +1,10 @@
 Board = {}
 
 function Board:new(x,y,grid_size,s)
-    self.x = x
-    self.y = y
-    self.size = s
-    self.grid_size = grid_size
+    self.x = x or 0
+    self.y = y or 0
+    self.grid_size = grid_size or 8
+    self.size = s or height
     --Generate background
     self.grid_image = love.graphics.newCanvas(720,720)
     love.graphics.setCanvas(self.grid_image)
@@ -38,10 +38,13 @@ function Board:new(x,y,grid_size,s)
         end
     end
 
+    --True if there are animations running (don't analyse while running!)
     self.isAnimated = false
+    --Obvious
     self.score = 0
 end
 
+--Update is literally only used for animations :D
 function Board:update(dt)
     --Animation stuff
     self.isAnimated = false
@@ -59,30 +62,54 @@ function Board:update(dt)
             --Swipe animation
             if (self.tiles[x][y].swap.x > 0) then
                 self.isAnimated = true
-                self.tiles[x][y].swap.x = self.tiles[x][y].swap.x - 0.08
-                if (self.tiles[x][y].swap.x < 0) then
+                self.tiles[x][y].swap.x = self.tiles[x][y].swap.x - (5*dt)
+                if (self.tiles[x][y].swap.x <= 0) then
                     self.tiles[x][y].swap.x = 0
+                    --Swap back if no match (x axis)
+                    if (not self:matchAt(x,y) and not self:matchAt(x+1,y) and not self.tiles[x][y].swapped and not self.tiles[x+1][y].swapped) then
+                        self.tiles[x][y].swap.x = -1
+                        self.tiles[x][y].swapped = true
+                        self.tiles[x+1][y].swap.x = 1
+                        self.tiles[x+1][y].swapped = true
+                        self:swapTiles(x,y,x+1,y)
+                    end
                 end
             end
             if (self.tiles[x][y].swap.x < 0) then
                 self.isAnimated = true
-                self.tiles[x][y].swap.x = self.tiles[x][y].swap.x + 0.08
-                if (self.tiles[x][y].swap.x > 0) then
+                self.tiles[x][y].swap.x = self.tiles[x][y].swap.x + (5*dt)
+                if (self.tiles[x][y].swap.x >= 0) then
                     self.tiles[x][y].swap.x = 0
                 end
             end
             if (self.tiles[x][y].swap.y > 0) then
                 self.isAnimated = true
-                self.tiles[x][y].swap.y = self.tiles[x][y].swap.y - 0.08
-                if (self.tiles[x][y].swap.y < 0) then
+                self.tiles[x][y].swap.y = self.tiles[x][y].swap.y - (5*dt)
+                if (self.tiles[x][y].swap.y <= 0) then
                     self.tiles[x][y].swap.y = 0
+                    --Swap back if no match (y axis)
+                    if (not self:matchAt(x,y) and not self:matchAt(x,y+1) and not self.tiles[x][y].swapped and not self.tiles[x][y+1].swapped) then
+                        self.tiles[x][y].swap.y = -1
+                        self.tiles[x][y].swapped = true
+                        self.tiles[x][y+1].swap.y = 1
+                        self.tiles[x][y+1].swapped = true
+                        self:swapTiles(x,y,x,y+1)
+                    end
                 end
             end
             if (self.tiles[x][y].swap.y < 0) then
                 self.isAnimated = true
-                self.tiles[x][y].swap.y = self.tiles[x][y].swap.y + 0.08
-                if (self.tiles[x][y].swap.y > 0) then
+                self.tiles[x][y].swap.y = self.tiles[x][y].swap.y + (5*dt)
+                if (self.tiles[x][y].swap.y >= 0) then
                     self.tiles[x][y].swap.y = 0
+                end
+            end
+            --Shrink/dissappear animation
+            if (self.tiles[x][y].matched == true) then
+                self.isAnimated = true
+                self.tiles[x][y].size = self.tiles[x][y].size - 0.1
+                if (self.tiles[x][y].size < 0) then
+                    self:removeTile(x,y)
                 end
             end
         end
@@ -107,7 +134,7 @@ function Board:draw()
     local sz2 = self.size/self.grid_size
     for x=1,self.grid_size do
         for y=1,self.grid_size do
-            love.graphics.draw(self.tiles[x][y].img,(x-1+self.tiles[x][y].swap.x)*(sz2),(y-1+self.tiles[x][y].offset+self.tiles[x][y].swap.y)*(sz2),0,sz2/self.tiles[x][y].img:getWidth(),sz2/self.tiles[x][y].img:getHeight())
+            centeredImage(self.tiles[x][y].img,(x-0.5+self.tiles[x][y].swap.x)*(sz2),(y-0.5+self.tiles[x][y].offset+self.tiles[x][y].swap.y)*(sz2),self.tiles[x][y].size*(sz2/self.tiles[x][y].img:getWidth()),self.tiles[x][y].size*(sz2/self.tiles[x][y].img:getHeight()))
         end
     end
     --Pop old coordinates
@@ -238,35 +265,43 @@ function Board:swapTiles(x1,y1,x2,y2)
     self.tiles[x2][y2] = copy
 end
 
---Called after each tile movement to check for matches
+--Delete (remove) tile at the provided coordinates
+function Board:removeTile(x,y)
+    --Shift tiles down one row
+    for j=y,2,-1 do
+        self.tiles[x][j] = copyTable(self.tiles[x][j-1])
+        self.tiles[x][j].offset = self.tiles[x][j].offset - 1
+        self.tiles[x][j].velocity = 0.03 - (0.002*(y-j))
+    end
+    --Spawn new tile at top
+    self.tiles[x][1] = new_tile()
+    if (self.tiles[x][2].offset == 0) then
+        self.tiles[x][1].offset = -1.5
+    else
+        self.tiles[x][1].offset = self.tiles[x][2].offset - 0.5
+    end
+    self.tiles[x][1].velocity = self.tiles[x][2].velocity - 0.002
+    if (self.tiles[x][1].velocity < 0) then
+        self.tiles[x][1].velocity = 0.03
+    end
+end
+
+--Called to analyse the board for matches
 function Board:analyse()
-    --Stores coordinates of matched tiles
+    --Store coordinates of matched tiles
     local match = {}
     for x=1,self.grid_size do
         for y=1,self.grid_size do
             if (self:matchAt(x,y) == true) then
                 match[#match+1] = {x,y}
             end
+            --Reset "swapped" variable
+            self.tiles[x][y].swapped = false
         end
     end
-
-    --Remove matched tiles (and set the animations)
+    --Remove (mark) the tiles
     for i=1,#match do
-        for j=match[i][2],2,-1 do
-            self.tiles[match[i][1]][j] = copyTable(self.tiles[match[i][1]][j-1])
-            self.tiles[match[i][1]][j].offset = self.tiles[match[i][1]][j].offset - 1
-            self.tiles[match[i][1]][j].velocity = 0.03 - (0.002*(match[i][2]-j))
-        end
-        self.tiles[match[i][1]][1] = new_tile()
-        if (self.tiles[match[i][1]][2].offset == 0) then
-            self.tiles[match[i][1]][1].offset = -1.5
-        else
-            self.tiles[match[i][1]][1].offset = self.tiles[match[i][1]][2].offset - 0.5
-        end
-        self.tiles[match[i][1]][1].velocity = self.tiles[match[i][1]][2].velocity - 0.002
-        if (self.tiles[match[i][1]][1].velocity < 0) then
-            self.tiles[match[i][1]][1].velocity = 0.03
-        end
+        self.tiles[match[i][1]][match[i][2]].matched = true
     end
 
     --Check if a shuffle is required and do if necessary

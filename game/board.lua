@@ -107,7 +107,7 @@ function Board:update(dt)
             --Shrink/dissappear animation
             if (self.tiles[x][y].matched == true) then
                 self.isAnimated = true
-                self.tiles[x][y].size = self.tiles[x][y].size - 0.1
+                self.tiles[x][y].size = self.tiles[x][y].size - (6*dt)
                 if (self.tiles[x][y].size < 0) then
                     self:removeTile(x,y)
                 end
@@ -184,9 +184,9 @@ function Board:matchAt(x,y)
     end
     --Return if there is a match!!
     if (numX > 2 or numY > 2) then
-        return true
+        return true, {X = numX, Y = numY}
     else
-        return false
+        return false, {X = numX, Y = numY}
     end
 end
 
@@ -288,20 +288,17 @@ end
 
 --Called to analyse the board for matches
 function Board:analyse()
-    --Store coordinates of matched tiles
-    local match = {}
     for x=1,self.grid_size do
         for y=1,self.grid_size do
-            if (self:matchAt(x,y) == true) then
-                match[#match+1] = {x,y}
+            -- Check for match
+            local isMatch, num = self:matchAt(x,y)
+            if (isMatch) then
+                -- Mark tile for deletion
+                self.tiles[x][y].matched = true
             end
             --Reset "swapped" variable
             self.tiles[x][y].swapped = false
         end
-    end
-    --Remove (mark) the tiles
-    for i=1,#match do
-        self.tiles[match[i][1]][match[i][2]].matched = true
     end
 
     --Check if a shuffle is required and do if necessary
@@ -403,7 +400,6 @@ function Board:shuffle()
     local X = self.grid_size
     local Y = self.grid_size
     while (#copies > 0) do
-        print(X,Y,#copies)
         local ranX
         local ranY
         repeat

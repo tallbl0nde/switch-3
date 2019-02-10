@@ -2,7 +2,11 @@
 function new_tile(type,state)
     local t = {}
     -- states:
-    t.state = state or ""
+    -- "vertical" = vertical powerup
+    -- "horizontal" = horizontal powerup
+    -- "explosion" = explosion powerup
+    -- "?" = hypercube powerup thing
+    t.state = state or nil
     -- offset (y in percent from -1 to 1)
     t.offset = 0
     -- velocity of gem (when falling)
@@ -13,22 +17,30 @@ function new_tile(type,state)
     -- variables for disappear animation
     t.size = 1
     t.matched = false
-    local col = love.math.random(1,7)
-    if (col == 1) then
-        t.type = "red"
-    elseif (col == 2) then
-        t.type = "orange"
-    elseif (col == 3) then
-        t.type = "yellow"
-    elseif (col == 4) then
-        t.type = "green"
-    elseif (col == 5) then
-        t.type = "blue"
-    elseif (col == 6) then
-        t.type = "purple"
-    elseif (col == 7) then
-        t.type = "white"
+    if (type) then
+        t.type = type
+    else
+        local col = love.math.random(1,7)
+        if (col == 1) then
+            t.type = "red"
+        elseif (col == 2) then
+            t.type = "orange"
+        elseif (col == 3) then
+            t.type = "yellow"
+        elseif (col == 4) then
+            t.type = "green"
+        elseif (col == 5) then
+            t.type = "blue"
+        elseif (col == 6) then
+            t.type = "purple"
+        elseif (col == 7) then
+            t.type = "white"
+        end
     end
-    t.img = _G["tile_"..t.type..t.state]
+    if (t.state) then
+        t.img = _G["tile_"..t.type.."_"..t.state]
+    else
+        t.img = _G["tile_"..t.type]
+    end
     return t
 end

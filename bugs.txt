@@ -1,4 +1,3 @@
 - Swapping animation bugs out after long up time
-- Dropping animation is uneven when only top row is replaced
 - Weird swap when wanting to swipe 2+ times at once
 - Background not transparent (maybe use image??)

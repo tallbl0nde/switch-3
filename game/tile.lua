@@ -49,3 +49,22 @@ function new_tile(colour,type)
     end
     return t
 end
+
+--new_placeholder: called to initalise and return a new tile placeholder (invisible)
+function new_placeholder()
+    local t = {}
+    -- Required for no crash
+    t.anim = {}
+    t.anim.offset = 0       -- offset (y in percent from -1 to 1)
+    t.anim.velocity = 0     -- velocity of gem (when falling)
+    t.anim.swapped = false  -- prevents infinite swaps :D
+    t.anim.size = 1         -- size of gem (used for animations too)
+    t.anim.swap = {}
+    t.anim.swap.x = 0       -- x pos for swap animation
+    t.anim.swap.y = 0       -- y pos for swap animation
+    t.matched = false
+    t.wasSwapped = false
+    -- Colour is 'invisible'
+    t.colour = "invisible"
+    return t
+end

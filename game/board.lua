@@ -21,12 +21,15 @@ function Board:new(x,y,grid_size,s)
     end
     love.graphics.setCanvas()
 
-    --Initalise tile array
+    --Initalise tile array (and another array for animations)
     self.tiles = {}
+    self.animtiles = {}
     for i = 1,self.grid_size do
         self.tiles[i] = {}
+        self.animtiles[i] = {}
         for j = 1,self.grid_size do
             self.tiles[i][j] = new_tile()
+            self.animtiles[i][j] = false
         end
     end
     --Check for a combination and replace if necessary
@@ -38,89 +41,106 @@ function Board:new(x,y,grid_size,s)
         end
     end
 
+    self.tiles[1][2] = new_tile("red")
+    self.tiles[2][2] = new_tile("red")
+    self.tiles[3][1] = new_tile("red")
+    self.tiles[4][1] = new_tile("red")
+    self.tiles[3][2] = new_tile("orange")
+    self.tiles[4][2] = new_tile("orange")
+    self.tiles[6][2] = new_tile("orange")
+
     --True if there are animations running (don't analyse while running!)
     self.isAnimated = false
     --Obvious
     self.score = 0
 end
 
---Update is literally only used for animations :D
+--Update is literally only used for animations (and analysing when not animating) :D
 function Board:update(dt)
     --Animation stuff
     self.isAnimated = false
     for x=1,self.grid_size do
         for y=1,self.grid_size do
-            --Falling animation stuff
-            if (self.tiles[x][y].offset < 0) then
+            --Falling animation
+            if (self.tiles[x][y].anim.offset < 0) then
                 self.isAnimated = true
-                self.tiles[x][y].velocity = self.tiles[x][y].velocity *(1+5*dt)
-                self.tiles[x][y].offset = self.tiles[x][y].offset + self.tiles[x][y].velocity
+                self.tiles[x][y].anim.velocity = self.tiles[x][y].anim.velocity + (0.4*dt)
+                self.tiles[x][y].anim.offset = self.tiles[x][y].anim.offset + self.tiles[x][y].anim.velocity
             end
-            if (self.tiles[x][y].offset > 0) then
-                self.tiles[x][y].offset = 0
+            if (self.tiles[x][y].anim.offset > 0) then
+                self.tiles[x][y].anim.offset = 0
             end
             --Swipe animation
-            if (self.tiles[x][y].swap.x > 0) then
+            --x (and swap back)
+            if (self.tiles[x][y].anim.swap.x > 0) then
                 self.isAnimated = true
-                self.tiles[x][y].swap.x = self.tiles[x][y].swap.x - (5*dt)
-                if (self.tiles[x][y].swap.x <= 0) then
-                    self.tiles[x][y].swap.x = 0
+                self.tiles[x][y].anim.swap.x = self.tiles[x][y].anim.swap.x - (5*dt)
+                if (self.tiles[x][y].anim.swap.x <= 0) then
+                    self.tiles[x][y].anim.swap.x = 0
                     --Swap back if no match (x axis)
-                    if (not self:matchAt(x,y) and not self:matchAt(x+1,y) and not self.tiles[x][y].swapped and not self.tiles[x+1][y].swapped) then
-                        self.tiles[x][y].swap.x = -1
-                        self.tiles[x][y].swapped = true
-                        self.tiles[x+1][y].swap.x = 1
-                        self.tiles[x+1][y].swapped = true
+                    if (not self:matchAt(x,y) and not self:matchAt(x+1,y) and not self.tiles[x][y].anim.swapped and not self.tiles[x+1][y].anim.swapped) then
+                        self.tiles[x][y].anim.swap.x = -1
+                        self.tiles[x][y].anim.swapped = true
+                        self.tiles[x+1][y].anim.swap.x = 1
+                        self.tiles[x+1][y].anim.swapped = true
                         self:swapTiles(x,y,x+1,y)
                     end
                 end
             end
-            if (self.tiles[x][y].swap.x < 0) then
+            --y (and swap back)
+            if (self.tiles[x][y].anim.swap.y > 0) then
                 self.isAnimated = true
-                self.tiles[x][y].swap.x = self.tiles[x][y].swap.x + (5*dt)
-                if (self.tiles[x][y].swap.x >= 0) then
-                    self.tiles[x][y].swap.x = 0
-                end
-            end
-            if (self.tiles[x][y].swap.y > 0) then
-                self.isAnimated = true
-                self.tiles[x][y].swap.y = self.tiles[x][y].swap.y - (5*dt)
-                if (self.tiles[x][y].swap.y <= 0) then
-                    self.tiles[x][y].swap.y = 0
+                self.tiles[x][y].anim.swap.y = self.tiles[x][y].anim.swap.y - (5*dt)
+                if (self.tiles[x][y].anim.swap.y <= 0) then
+                    self.tiles[x][y].anim.swap.y = 0
                     --Swap back if no match (y axis)
-                    if (not self:matchAt(x,y) and not self:matchAt(x,y+1) and not self.tiles[x][y].swapped and not self.tiles[x][y+1].swapped) then
-                        self.tiles[x][y].swap.y = -1
-                        self.tiles[x][y].swapped = true
-                        self.tiles[x][y+1].swap.y = 1
-                        self.tiles[x][y+1].swapped = true
+                    if (not self:matchAt(x,y) and not self:matchAt(x,y+1) and not self.tiles[x][y].anim.swapped and not self.tiles[x][y+1].anim.swapped) then
+                        self.tiles[x][y].anim.swap.y = -1
+                        self.tiles[x][y].anim.swapped = true
+                        self.tiles[x][y+1].anim.swap.y = 1
+                        self.tiles[x][y+1].anim.swapped = true
                         self:swapTiles(x,y,x,y+1)
                     end
                 end
             end
-            if (self.tiles[x][y].swap.y < 0) then
+            if (self.tiles[x][y].anim.swap.x < 0) then
                 self.isAnimated = true
-                self.tiles[x][y].swap.y = self.tiles[x][y].swap.y + (5*dt)
-                if (self.tiles[x][y].swap.y >= 0) then
-                    self.tiles[x][y].swap.y = 0
+                self.tiles[x][y].anim.swap.x = self.tiles[x][y].anim.swap.x + (5*dt)
+                if (self.tiles[x][y].anim.swap.x >= 0) then
+                    self.tiles[x][y].anim.swap.x = 0
+                end
+            end
+            if (self.tiles[x][y].anim.swap.y < 0) then
+                self.isAnimated = true
+                self.tiles[x][y].anim.swap.y = self.tiles[x][y].anim.swap.y + (5*dt)
+                if (self.tiles[x][y].anim.swap.y >= 0) then
+                    self.tiles[x][y].anim.swap.y = 0
                 end
             end
             --Shrink/dissappear animation
             if (self.tiles[x][y].matched == true) then
                 self.isAnimated = true
-                self.tiles[x][y].size = self.tiles[x][y].size - (6*dt)
-                if (self.tiles[x][y].size < 0) then
+                self.tiles[x][y].anim.size = self.tiles[x][y].anim.size - (6*dt)
+                if (self.tiles[x][y].anim.size < 0.5) then
+                    self.animtiles[x][y] = copyTable(self.tiles[x][y])
                     self:removeTile(x,y)
+                end
+            end
+            if (self.animtiles[x][y] ~= false) then
+                self.animtiles[x][y].anim.size = self.animtiles[x][y].anim.size - (6*dt)
+                if (self.animtiles[x][y].anim.size < 0) then
+                    self.animtiles[x][y] = false
                 end
             end
         end
     end
-    --Analyse the board if gems aren't moving
+    --Analyse the board if no animation
     if (self.isAnimated == false) then
         self:analyse()
     end
 end
 
--- Draw the board with (x,y) being the top left corner
+-- Draw the board with (self.x,self.y) being the top left corner
 function Board:draw()
     --Setup coordinates
     love.graphics.push("all")
@@ -134,7 +154,10 @@ function Board:draw()
     local sz2 = self.size/self.grid_size
     for x=1,self.grid_size do
         for y=1,self.grid_size do
-            centeredImage(self.tiles[x][y].img,(x-0.5+self.tiles[x][y].swap.x)*(sz2),(y-0.5+self.tiles[x][y].offset+self.tiles[x][y].swap.y)*(sz2),self.tiles[x][y].size*(sz2/self.tiles[x][y].img:getWidth()),self.tiles[x][y].size*(sz2/self.tiles[x][y].img:getHeight()))
+            centeredImage(self.tiles[x][y].img,(x-0.5+self.tiles[x][y].anim.swap.x)*(sz2),(y-0.5+self.tiles[x][y].anim.offset+self.tiles[x][y].anim.swap.y)*(sz2),self.tiles[x][y].anim.size*(sz2/self.tiles[x][y].img:getWidth()),self.tiles[x][y].anim.size*(sz2/self.tiles[x][y].img:getHeight()))
+            if (self.animtiles[x][y] ~= false) then
+                centeredImage(self.animtiles[x][y].img,(x-0.5+self.animtiles[x][y].anim.swap.x)*(sz2),(y-0.5+self.animtiles[x][y].anim.offset+self.animtiles[x][y].anim.swap.y)*(sz2),self.animtiles[x][y].anim.size*(sz2/self.animtiles[x][y].img:getWidth()),self.animtiles[x][y].anim.size*(sz2/self.animtiles[x][y].img:getHeight()))
+            end
         end
     end
     --Pop old coordinates
@@ -143,13 +166,13 @@ end
 
 -- Return true if a match is formed at (x,y) or false otherwise
 function Board:matchAt(x,y)
-    local col = self.tiles[x][y].type
+    local col = self.tiles[x][y].colour
     local numX, numY = 1, 1
     local i = 0
     --Check horizontally to the left
     if (x > 1) then
         i = x-1
-        while (self.tiles[i][y].type == col) do
+        while (self.tiles[i][y].colour == col) do
             i = i - 1
             numX = numX + 1
             if (i < 1) then break end
@@ -158,7 +181,7 @@ function Board:matchAt(x,y)
     --Check horizontally to the right
     if (x < self.grid_size) then
     i = x+1
-        while (self.tiles[i][y].type == col) do
+        while (self.tiles[i][y].colour == col) do
             i = i + 1
             numX = numX + 1
             if (i > self.grid_size) then break end
@@ -167,7 +190,7 @@ function Board:matchAt(x,y)
     --Check vertically upwards
     if (y > 1) then
         i = y-1
-        while (self.tiles[x][i].type == col) do
+        while (self.tiles[x][i].colour == col) do
             i = i - 1
             numY = numY + 1
             if (i < 1) then break end
@@ -176,7 +199,7 @@ function Board:matchAt(x,y)
     --Check vertically downwards
     if (y < self.grid_size) then
         i = y+1
-        while (self.tiles[x][i].type == col) do
+        while (self.tiles[x][i].colour == col) do
             i = i + 1
             numY = numY + 1
             if (i > self.grid_size) then break end
@@ -228,76 +251,106 @@ function Board:released(absX,absY)
     if (dy < 0 and self.touch_start.ty > 1) then
         if ( ( (dx >= 0 and math.atan(dx/-dy) < (math.pi/6)) or (dx < 0 and math.atan(dx/-dy) > -(math.pi/6)) ) and (len > thr) ) then
             self:swapTiles(self.touch_start.tx,self.touch_start.ty-1,self.touch_start.tx,self.touch_start.ty)
-            self.tiles[self.touch_start.tx][self.touch_start.ty-1].swap.y = 1
-            self.tiles[self.touch_start.tx][self.touch_start.ty].swap.y = -1
         end
     end
     --Swipe down
     if (dy > 0 and self.touch_start.ty < self.grid_size) then
         if ( ( (dx >= 0 and math.atan(dx/-dy) > -(math.pi/6)) or (dx < 0 and math.atan(dx/-dy) < (math.pi/6)) ) and (len > thr) ) then
-            self:swapTiles(self.touch_start.tx,self.touch_start.ty+1,self.touch_start.tx,self.touch_start.ty)
-            self.tiles[self.touch_start.tx][self.touch_start.ty+1].swap.y = -1
-            self.tiles[self.touch_start.tx][self.touch_start.ty].swap.y = 1
+            self:swapTiles(self.touch_start.tx,self.touch_start.ty,self.touch_start.tx,self.touch_start.ty+1)
         end
     end
     --Swipe right
     if (dx > 0 and self.touch_start.tx < self.grid_size) then
         if ( ( (dy < 0 and math.atan(-dy/dx) < (math.pi/6)) or (dy >= 0 and math.atan(-dy/dx) > -(math.pi/6)) ) and (len > thr) ) then
-            self:swapTiles(self.touch_start.tx+1,self.touch_start.ty,self.touch_start.tx,self.touch_start.ty)
-            self.tiles[self.touch_start.tx][self.touch_start.ty].swap.x = 1
-            self.tiles[self.touch_start.tx+1][self.touch_start.ty].swap.x = -1
+            self:swapTiles(self.touch_start.tx,self.touch_start.ty,self.touch_start.tx+1,self.touch_start.ty)
         end
     end
     --Swipe left
     if (dx < 0 and self.touch_start.tx > 1) then
         if ( ( (dy < 0 and math.atan(-dy/dx) > -(math.pi/6)) or (dy >= 0 and math.atan(-dy/dx) < (math.pi/6)) ) and (len > thr) ) then
             self:swapTiles(self.touch_start.tx-1,self.touch_start.ty,self.touch_start.tx,self.touch_start.ty)
-            self.tiles[self.touch_start.tx-1][self.touch_start.ty].swap.x = 1
-            self.tiles[self.touch_start.tx][self.touch_start.ty].swap.x = -1
         end
     end
 end
 
---Swap two tiles at the provided coordinates
+--Swap two tiles at the provided coordinates (topleft most, bottomright most)
 function Board:swapTiles(x1,y1,x2,y2)
+    --Set animation variables
+    self.tiles[x1][y1].anim.swap.x = x1-x2
+    self.tiles[x1][y1].anim.swap.y = y1-y2
+    self.tiles[x2][y2].anim.swap.x = x2-x1
+    self.tiles[x2][y2].anim.swap.y = y2-y1
+    --Actually swap
     local copy = self.tiles[x1][y1]
     self.tiles[x1][y1] = self.tiles[x2][y2]
     self.tiles[x2][y2] = copy
+    self.tiles[x1][y1].wasSwapped = true
+    self.tiles[x2][y2].wasSwapped = true
 end
 
 --Delete (remove) tile at the provided coordinates
+--VARIES BASED ON TILE TYPE
 function Board:removeTile(x,y)
-    --Shift tiles down one row
-    for j=y,2,-1 do
-        self.tiles[x][j] = copyTable(self.tiles[x][j-1])
-        self.tiles[x][j].offset = self.tiles[x][j].offset - 1
-        self.tiles[x][j].velocity = 0.03 - (0.002*(y-j))
-    end
-    --Spawn new tile at top
-    self.tiles[x][1] = new_tile()
-    if (self.tiles[x][2].offset == 0) then
-        self.tiles[x][1].offset = -1.5
+    if (self.tiles[x][y].type == "verticaal") then
+
     else
-        self.tiles[x][1].offset = self.tiles[x][2].offset - 0.5
-    end
-    self.tiles[x][1].velocity = self.tiles[x][2].velocity - 0.002
-    if (self.tiles[x][1].velocity < 0) then
-        self.tiles[x][1].velocity = 0.03
+        --Default to 'normal' tile
+        --Shift tiles down one row
+        for j=y,2,-1 do
+            self.tiles[x][j] = copyTable(self.tiles[x][j-1])
+            self.tiles[x][j].anim.offset = self.tiles[x][j].anim.offset - 1
+            self.tiles[x][j].anim.velocity = 0.01
+        end
+        --Spawn new tile at top
+        self.tiles[x][1] = new_tile()
+        if (self.tiles[x][2].anim.offset == 0) then
+            self.tiles[x][1].anim.offset = -1.5
+        else
+            self.tiles[x][1].anim.offset = self.tiles[x][2].anim.offset - 0.5
+        end
+        self.tiles[x][1].anim.velocity = self.tiles[x][2].anim.velocity - 0.002
+        if (self.tiles[x][1].anim.velocity < 0) then
+            self.tiles[x][1].anim.velocity = 0.03
+        end
     end
 end
 
 --Called to analyse the board for matches
 function Board:analyse()
+    --Check for matches and place powerups when required
     for x=1,self.grid_size do
         for y=1,self.grid_size do
             -- Check for match
             local isMatch, num = self:matchAt(x,y)
-            if (isMatch) then
-                -- Mark tile for deletion
-                self.tiles[x][y].matched = true
+            if (isMatch and not self.tiles[x][y].matched) then
+                -- Check if the tile has been swapped and if so check for powerup conditions
+                if (self.tiles[x][y].wasSwapped == true) then
+                    -- Vertical powerup
+                    if (num.X > 3 and num.Y < 2) then
+                        self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"vertical")
+                    -- Horizontal powerup
+                    elseif (num.X < 2 and num.Y > 3) then
+                        self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"horizontal")
+                    -- Explosion powerup
+                    elseif (num.X > 2 and num.Y > 2) then
+                        self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"explosion")
+                    else
+                        -- Else mark tile for deletion
+                        self.tiles[x][y].matched = true
+                    end
+                else
+                    --Explosion powerup
+                    if (num.X > 2 and num.Y > 2) then
+                        self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"explosion")
+                    else
+                        -- Mark tile for deletion
+                        self.tiles[x][y].matched = true
+                    end
+                end
             end
-            --Reset "swapped" variable
-            self.tiles[x][y].swapped = false
+            -- Reset vars
+            self.tiles[x][y].anim.swapped = false
+            self.tiles[x][y].wasSwapped = false
         end
     end
 
@@ -307,14 +360,14 @@ function Board:analyse()
     local check = {{-1,-1},{-2,0},{-1,1},{2,-1},{3,0},{2,1}} --(coords from left tile)
     for x=1,self.grid_size-1 do
         for y=1,self.grid_size do
-            if (self.tiles[x][y].type == self.tiles[x+1][y].type) then
+            if (self.tiles[x][y].colour == self.tiles[x+1][y].colour) then
                 --Check adjacent tiles
                 for i=1,#check do
                     local X = x+check[i][1]
                     local Y = y+check[i][2]
                     if (X < 1 or X > self.grid_size or Y < 1 or Y > self.grid_size) then
                     else
-                        if (self.tiles[x][y].type == self.tiles[X][Y].type) then
+                        if (self.tiles[x][y].colour == self.tiles[X][Y].colour) then
                             self.no_matches = false
                         end
                     end
@@ -326,14 +379,14 @@ function Board:analyse()
     local check = {{-1,-1},{1,-1},{0,-2},{1,2},{-1,2},{0,3}} --(coords from top tile)
     for x=1,self.grid_size do
         for y=1,self.grid_size-1 do
-            if (self.tiles[x][y].type == self.tiles[x][y+1].type) then
+            if (self.tiles[x][y].colour == self.tiles[x][y+1].colour) then
                 --Check adjacent tiles
                 for i=1,#check do
                     local X = x+check[i][1]
                     local Y = y+check[i][2]
                     if (X < 1 or X > self.grid_size or Y < 1 or Y > self.grid_size) then
                     else
-                        if (self.tiles[x][y].type == self.tiles[X][Y].type) then
+                        if (self.tiles[x][y].colour == self.tiles[X][Y].colour) then
                             self.no_matches = false
                         end
                     end
@@ -345,14 +398,14 @@ function Board:analyse()
     local check = {{1,-1},{1,1}} --(coords from left tile)
     for x=1,self.grid_size-2 do
         for y=1,self.grid_size do
-            if (self.tiles[x][y].type == self.tiles[x+2][y].type) then
+            if (self.tiles[x][y].colour == self.tiles[x+2][y].colour) then
                 --Check adjacent tiles
                 for i=1,#check do
                     local X = x+check[i][1]
                     local Y = y+check[i][2]
                     if (X < 1 or X > self.grid_size or Y < 1 or Y > self.grid_size) then
                     else
-                        if (self.tiles[x][y].type == self.tiles[X][Y].type) then
+                        if (self.tiles[x][y].colour == self.tiles[X][Y].colour) then
                             self.no_matches = false
                         end
                     end
@@ -364,14 +417,14 @@ function Board:analyse()
     local check = {{1,1},{-1,1}} --(coords from top tile)
     for x=1,self.grid_size do
         for y=1,self.grid_size-2 do
-            if (self.tiles[x][y].type == self.tiles[x][y+2].type) then
+            if (self.tiles[x][y].colour == self.tiles[x][y+2].colour) then
                 --Check adjacent tiles
                 for i=1,#check do
                     local X = x+check[i][1]
                     local Y = y+check[i][2]
                     if (X < 1 or X > self.grid_size or Y < 1 or Y > self.grid_size) then
                     else
-                        if (self.tiles[x][y].type == self.tiles[X][Y].type) then
+                        if (self.tiles[x][y].colour == self.tiles[X][Y].colour) then
                             self.no_matches = false
                         end
                     end

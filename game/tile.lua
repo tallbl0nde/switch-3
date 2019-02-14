@@ -1,46 +1,51 @@
 --newTile: called to initalise and return a new tile
-function new_tile(type,state)
+function new_tile(colour,type)
     local t = {}
     -- states:
     -- "vertical" = vertical powerup
     -- "horizontal" = horizontal powerup
     -- "explosion" = explosion powerup
     -- "?" = hypercube powerup thing
-    t.state = state or nil
-    -- offset (y in percent from -1 to 1)
-    t.offset = 0
-    -- velocity of gem (when falling)
-    t.velocity = 0
-    -- variables for swapping animations
-    t.swap = {x = 0, y = 0}
-    t.swapped = false
-    -- variables for disappear animation
-    t.size = 1
+    t.type = type or nil
+    -- Animation variables
+    t.anim = {}
+    t.anim.offset = 0       -- offset (y in percent from -1 to 1)
+    t.anim.velocity = 0     -- velocity of gem (when falling)
+    t.anim.swapped = false  -- prevents infinite swaps :D
+    t.anim.size = 1         -- size of gem (used for animations too)
+    t.anim.swap = {}
+    t.anim.swap.x = 0       -- x pos for swap animation
+    t.anim.swap.y = 0       -- y pos for swap animation
+    -- True if matched and needs to be removed
     t.matched = false
-    if (type) then
-        t.type = type
+    -- True if tile was involved in swapping (used for powerups)
+    t.wasSwapped = false
+    -- If passed a colour then use that else choose one at random
+    if (colour) then
+        t.colour = colour
     else
         local col = love.math.random(1,7)
         if (col == 1) then
-            t.type = "red"
+            t.colour = "red"
         elseif (col == 2) then
-            t.type = "orange"
+            t.colour = "orange"
         elseif (col == 3) then
-            t.type = "yellow"
+            t.colour = "yellow"
         elseif (col == 4) then
-            t.type = "green"
+            t.colour = "green"
         elseif (col == 5) then
-            t.type = "blue"
+            t.colour = "blue"
         elseif (col == 6) then
-            t.type = "purple"
+            t.colour = "purple"
         elseif (col == 7) then
-            t.type = "white"
+            t.colour = "white"
         end
     end
-    if (t.state) then
-        t.img = _G["tile_"..t.type.."_"..t.state]
+    -- Get image based on states
+    if (t.type) then
+        t.img = _G["tile_"..t.colour.."_"..t.type]
     else
-        t.img = _G["tile_"..t.type]
+        t.img = _G["tile_"..t.colour]
     end
     return t
 end

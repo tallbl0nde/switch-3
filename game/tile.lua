@@ -5,7 +5,7 @@ function new_tile(colour,type)
     -- "vertical" = vertical powerup
     -- "horizontal" = horizontal powerup
     -- "explosion" = explosion powerup
-    -- "?" = hypercube powerup thing
+    -- "remover" = hypercube powerup thing
     t.type = type or nil
     -- Animation variables
     t.anim = {}
@@ -42,7 +42,9 @@ function new_tile(colour,type)
         end
     end
     -- Get image based on states
-    if (t.type) then
+    if (t.type == "remover") then
+        t.img = _G["tile_remover"]
+    elseif (t.type) then
         t.img = _G["tile_"..t.colour.."_"..t.type]
     else
         t.img = _G["tile_"..t.colour]

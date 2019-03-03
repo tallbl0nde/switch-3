@@ -41,7 +41,7 @@ function Board:new(x,y,grid_size,s)
         end
     end
 
-    self.tiles[2][2] = new_tile(self.tiles[2][2].colour,"explosion")
+    self.tiles[4][3] = new_tile(nil,"remover")
 
     --True if there are animations running (don't analyse while running!)
     self.isAnimated = false
@@ -275,17 +275,25 @@ end
 
 --Swap two tiles at the provided coordinates (topleft most, bottomright most)
 function Board:swapTiles(x1,y1,x2,y2)
-    --Set animation variables
-    self.tiles[x1][y1].anim.swap.x = x1-x2
-    self.tiles[x1][y1].anim.swap.y = y1-y2
-    self.tiles[x2][y2].anim.swap.x = x2-x1
-    self.tiles[x2][y2].anim.swap.y = y2-y1
+    if (self.tiles[x1][y1].type == "remover") then
+        self.tiles[x1][y1].colour = self.tiles[x2][y2].colour
+        self.tiles[x1][y1].matched = true
+    elseif (self.tiles[x2][y2].type == "remover") then
+        self.tiles[x2][y2].colour = self.tiles[x1][y1].colour
+        self.tiles[x2][y2].matched = true
+    else
+        --Set animation variables
+        self.tiles[x1][y1].anim.swap.x = x1-x2
+        self.tiles[x1][y1].anim.swap.y = y1-y2
+        self.tiles[x2][y2].anim.swap.x = x2-x1
+        self.tiles[x2][y2].anim.swap.y = y2-y1
     --Actually swap
-    local copy = self.tiles[x1][y1]
-    self.tiles[x1][y1] = self.tiles[x2][y2]
-    self.tiles[x2][y2] = copy
-    self.tiles[x1][y1].wasSwapped = true
-    self.tiles[x2][y2].wasSwapped = true
+        local copy = self.tiles[x1][y1]
+        self.tiles[x1][y1] = self.tiles[x2][y2]
+        self.tiles[x2][y2] = copy
+        self.tiles[x1][y1].wasSwapped = true
+        self.tiles[x2][y2].wasSwapped = true
+    end
 end
 
 --Delete (remove) tile at the provided coordinates
@@ -311,6 +319,17 @@ function Board:removeTile(x,y)
                 end
             end
         end
+    elseif (self.tiles[x][y].type == "remover") then
+        for i=1,self.grid_size do
+            for j=1,self.grid_size do
+                if (i == x and j == y) then
+                else
+                    if (self.tiles[i][j].colour == self.tiles[x][y].colour) then
+                        self:removeTile(i,j)
+                    end
+                end
+            end
+        end
     end
     --Replace with placeholder
     self.tiles[x][y] = new_placeholder()
@@ -319,6 +338,7 @@ end
 --Called to analyse the board for matches
 function Board:analyse()
     --Check for matches and place powerups when required
+    local remX, remY = 0,0
     for x=1,self.grid_size do
         for y=1,self.grid_size do
             -- If a placeholder is here, adjust tiles as required
@@ -337,15 +357,19 @@ function Board:analyse()
                 if (isMatch and not self.tiles[x][y].matched) then
                     -- Check if the tile has been swapped and if so check for powerup conditions
                     if (self.tiles[x][y].wasSwapped == true) then
-                        -- Vertical powerup
-                        if (num.X > 3 and num.Y < 2) then
-                            self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"vertical")
-                        -- Horizontal powerup
-                        elseif (num.X < 2 and num.Y > 3) then
-                            self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"horizontal")
-                        -- Explosion powerup
+                        -- Remover powerup
+                        if (num.X > 4 or num.Y > 4) then
+                            self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"remover")
+                            remX, remY = x, y
+                            -- Explosion powerup
                         elseif (num.X > 2 and num.Y > 2) then
                             self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"explosion")
+                        -- Horizontal powerup
+                        elseif (num.Y > 3) then
+                            self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"horizontal")
+                        -- Vertical powerup
+                        elseif (num.X > 3) then
+                            self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"vertical")
                         else
                             -- Else mark tile for deletion
                             self.tiles[x][y].matched = true
@@ -366,6 +390,9 @@ function Board:analyse()
                 self.tiles[x][y].anim.velocity = 0
             end
         end
+    end
+    if (remX ~= 0 and remY ~= 0) then
+        self.tiles[remX][remY].colour = nil
     end
 
     --Check if a shuffle is required and do if necessary
@@ -446,9 +473,15 @@ function Board:analyse()
             end
         end
     end
-    --Case 5: special gems
-    --TODO
-
+    --Cases 5+: special gems
+    for x=1,self.grid_size do
+        for y=1,self.grid_size do
+            --Remover present = match
+            if (self.tiles[x][y].type == "remover") then
+                self.no_matches = false
+            end
+        end
+    end
 end
 
 --Called to shuffle the board

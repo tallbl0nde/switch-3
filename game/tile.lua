@@ -18,6 +18,8 @@ function new_tile(colour,type)
     t.anim.swap.y = 0       -- y pos for swap animation
     -- True if matched and needs to be removed
     t.matched = false
+    -- True if tile was checked for match in current analyze (so far only used for powerup shizzle)
+    t.analyzed = false
     -- True if tile was involved in swapping (used for powerups)
     t.wasSwapped = false
     -- If passed a colour then use that else choose one at random

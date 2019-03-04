@@ -41,8 +41,6 @@ function Board:new(x,y,grid_size,s)
         end
     end
 
-    self.tiles[4][3] = new_tile(nil,"remover")
-
     --True if there are animations running (don't analyse while running!)
     self.isAnimated = false
     --Obvious
@@ -320,6 +318,26 @@ function Board:removeTile(x,y)
             end
         end
     elseif (self.tiles[x][y].type == "remover") then
+        -- If the tile has not been swapped, it needs to pick a random colour to remove
+        if (self.tiles[x][y].colour == nil) then
+            local col = love.math.random(1,7)
+            if (col == 1) then
+                self.tiles[x][y].colour = "red"
+            elseif (col == 2) then
+                self.tiles[x][y].colour = "orange"
+            elseif (col == 3) then
+                self.tiles[x][y].colour = "yellow"
+            elseif (col == 4) then
+                self.tiles[x][y].colour = "green"
+            elseif (col == 5) then
+                self.tiles[x][y].colour = "blue"
+            elseif (col == 6) then
+                self.tiles[x][y].colour = "purple"
+            elseif (col == 7) then
+                self.tiles[x][y].colour = "white"
+            end
+        end
+        -- Search the board and remove all of the same colour!
         for i=1,self.grid_size do
             for j=1,self.grid_size do
                 if (i == x and j == y) then
@@ -337,7 +355,62 @@ end
 
 --Called to analyse the board for matches
 function Board:analyse()
-    --Check for matches and place powerups when required
+    -- Start by checking for any combinations which should create an "explosion" powerup
+    for x=1,self.grid_size do
+        for y=1,self.grid_size do
+            local isMatch, num = self:matchAt(x,y)
+            if (num.X > 2 and num.Y > 2 and not self.tiles[x][y].matched) then
+                -- A powerup should be placed at this location, mark all involved tiles for removal :D
+                self.tiles[x][y] = new_tile(self.tiles[x][y].colour, "explosion")
+                self.tiles[x][y].analyzed = true
+                -- Check -x
+                local a = x-1
+                while (a > 0) do
+                    if (self.tiles[a][y].colour == self.tiles[x][y].colour) then
+                        self.tiles[a][y].matched = true
+                        self.tiles[a][y].analyzed = true
+                        a = a - 1
+                    else
+                        break
+                    end
+                end
+                -- Check +x
+                local a = x+1
+                while (a < self.grid_size+1) do
+                    if (self.tiles[a][y].colour == self.tiles[x][y].colour) then
+                        self.tiles[a][y].matched = true
+                        self.tiles[a][y].analyzed = true
+                        a = a + 1
+                    else
+                        break
+                    end
+                end
+                -- Check -y
+                local a = y-1
+                while (a > 0) do
+                    if (self.tiles[x][a].colour == self.tiles[x][y].colour) then
+                        self.tiles[x][a].matched = true
+                        self.tiles[x][a].analyzed = true
+                        a = a - 1
+                    else
+                        break
+                    end
+                end
+                -- Check +y
+                local a = y+1
+                while (a > self.grid_size+1) do
+                    if (self.tiles[x][a].colour == self.tiles[x][y].colour) then
+                        self.tiles[x][a].matched = true
+                        self.tiles[x][a].analyzed = true
+                        a = a + 1
+                    else
+                        break
+                    end
+                end
+            end
+        end
+    end
+    -- And end by checking for all other types of matches
     local remX, remY = 0,0
     for x=1,self.grid_size do
         for y=1,self.grid_size do
@@ -354,34 +427,89 @@ function Board:analyse()
             else
                 -- Check for match
                 local isMatch, num = self:matchAt(x,y)
-                if (isMatch and not self.tiles[x][y].matched) then
-                    -- Check if the tile has been swapped and if so check for powerup conditions
-                    if (self.tiles[x][y].wasSwapped == true) then
-                        -- Remover powerup
-                        if (num.X > 4 or num.Y > 4) then
-                            self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"remover")
-                            remX, remY = x, y
-                            -- Explosion powerup
-                        elseif (num.X > 2 and num.Y > 2) then
-                            self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"explosion")
-                        -- Horizontal powerup
-                        elseif (num.Y > 3) then
-                            self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"horizontal")
-                        -- Vertical powerup
-                        elseif (num.X > 3) then
-                            self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"vertical")
-                        else
-                            -- Else mark tile for deletion
-                            self.tiles[x][y].matched = true
+                if (isMatch and not self.tiles[x][y].analyzed) then
+                    -- Remover powerup
+                    if (num.X > 4) then
+                        -- Determine if result of swap or random falling
+                        local swp = false
+                        for a=x,x+num.X-1 do
+                            self.tiles[a][y].matched = true
+                            if (self.tiles[a][y].wasSwapped) then
+                                self.tiles[a][y] = new_tile(self.tiles[a][y].colour,"remover")
+                                remX, remY = a, y
+                                swp = true
+                            end
+                            self.tiles[a][y].analyzed = true
                         end
+                        -- If not due to swap, place powerup randomly
+                        if (not swp) then
+                            local c = x+love.math.random(0,num.X)
+                            self.tiles[c][y] = new_tile(self.tiles[c][y].colour,"remover")
+                            remX, remY = c, y
+                            self.tiles[c][y].analyzed = true
+                        end
+                    elseif (num.Y > 4) then
+                        -- Determine if result of swap or random falling
+                        local swp = false
+                        for a=y,y+num.Y-1 do
+                            self.tiles[x][a].matched = true
+                            if (self.tiles[x][a].wasSwapped) then
+                                self.tiles[x][a] = new_tile(self.tiles[x][a].colour,"remover")
+                                remX, remY = x, a
+                                swp = true
+                            end
+                            self.tiles[x][a].analyzed = true
+                        end
+                        -- If not due to swap, place powerup randomly
+                        if (not swp) then
+                            local c = y+love.math.random(0,num.Y)
+                            self.tiles[x][c] = new_tile(self.tiles[x][c].colour,"remover")
+                            remX, remY = x, c
+                            self.tiles[x][c].analyzed = true
+                        end
+
+                    -- Horizontal powerup
+                    elseif (num.Y == 4) then
+                        -- Determine if result of swap or random falling
+                        local swp = false
+                        for a=y,y+3 do
+                            self.tiles[x][a].matched = true
+                            if (self.tiles[x][a].wasSwapped) then
+                                self.tiles[x][a] = new_tile(self.tiles[x][a].colour,"horizontal")
+                                swp = true
+                            end
+                            self.tiles[x][a].analyzed = true
+                        end
+                        -- If not due to swap, place powerup randomly
+                        if (not swp) then
+                            local c = y+love.math.random(0,3)
+                            self.tiles[x][c] = new_tile(self.tiles[x][c].colour,"horizontal")
+                            self.tiles[x][c].analyzed = true
+                        end
+
+                    -- Vertical powerup
+                    elseif (num.X == 4) then
+                        -- Determine if result of swap or random falling
+                        local swp = false
+                        for a=x,x+3 do
+                            self.tiles[a][y].matched = true
+                            if (self.tiles[a][y].wasSwapped) then
+                                self.tiles[a][y] = new_tile(self.tiles[a][y].colour,"vertical")
+                                swp = true
+                            end
+                            self.tiles[a][y].analyzed = true
+                        end
+                        -- If not due to swap, place powerup randomly
+                        if (not swp) then
+                            local c = x+love.math.random(0,3)
+                            self.tiles[c][y] = new_tile(self.tiles[c][y].colour,"vertical")
+                            self.tiles[c][y].analyzed = true
+                        end
+
+                    -- Else if normal match of 3 just remove :D
                     else
-                        --Explosion powerup
-                        if (num.X > 2 and num.Y > 2) then
-                            self.tiles[x][y] = new_tile(self.tiles[x][y].colour,"explosion")
-                        else
-                            -- Mark tile for deletion
-                            self.tiles[x][y].matched = true
-                        end
+                        -- Else mark tile for deletion
+                        self.tiles[x][y].matched = true
                     end
                 end
                 -- Reset vars
@@ -389,6 +517,13 @@ function Board:analyse()
                 self.tiles[x][y].wasSwapped = false
                 self.tiles[x][y].anim.velocity = 0
             end
+        end
+    end
+
+    -- Reset "analyzed" variable prior to next analysis
+    for x=1,self.grid_size do
+        for y=1,self.grid_size do
+            self.tiles[x][y].analyzed = false
         end
     end
     if (remX ~= 0 and remY ~= 0) then

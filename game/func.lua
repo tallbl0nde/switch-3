@@ -22,3 +22,10 @@ function centeredImage(img,x,y,sx,sy)
     local Y = round(y-(sy*img:getHeight())/2)
     love.graphics.draw(img,X,Y,0,sx,sy)
 end
+
+--Draw centered text
+function printC(txt,x,y,size)
+	local w = size:getWidth(txt)/2
+	local h = size:getHeight(txt)/2
+	love.graphics.print(txt,x-w,y-h)
+end

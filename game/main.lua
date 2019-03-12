@@ -12,7 +12,10 @@ function love.load()
         require("load")()
     end
     Board1 = Board
-    Board1:new(290,10,8,700)
+    Board1:new(500,20,8,680)
+
+    font14 = love.graphics.newFont(14)
+    font25 = love.graphics.newFont("resources/font/Bebas.ttf",25)
 end
 
 function love.update(dt)
@@ -36,18 +39,18 @@ end
 
 --SWITCH CONTROLS
 function love.touchpressed(id,x,y)
-    Board1:pressed(x,y)
+    Board1:pressed(id,x,y)
 end
 
 function love.touchreleased(id,x,y)
-    Board1:released(x,y)
+    Board1:released(id,x,y)
 end
 
 --PC CONTROLS
 function love.mousepressed(x,y)
-    Board1:pressed(x,y)
+    Board1:pressed(1,x,y)
 end
 
 function love.mousereleased(x,y)
-    Board1:released(x,y)
+    Board1:released(1,x,y)
 end

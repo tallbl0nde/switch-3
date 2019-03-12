@@ -1,4 +1,2 @@
 - Swapping animation bugs out after long up time
 - Weird swap when wanting to swipe 2+ times at once
-- Background not transparent (maybe use image??)
-- Swapping a powerup to make another does not trigger the original powerups action

@@ -6,6 +6,7 @@ local function load()
         screen = 1
         return
     end
+    if (files[step] == "font") then step = step + 1 return end
     local current = string.match(files[step],"(.+)%.")
 
     --Draw stuff

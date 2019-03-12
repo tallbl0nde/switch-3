@@ -21,6 +21,7 @@ function toggleDebug()
 end
 
 function drawDebug()
+    love.graphics.setFont(font14)
     if (show == 1) then
         love.graphics.setColor(1,1,1,1)
         love.graphics.print("FPS: "..love.timer.getFPS(),love.graphics.getWidth()-love.graphics.getFont():getWidth("FPS: "..love.timer.getFPS()),0)

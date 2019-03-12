@@ -1,5 +1,5 @@
 --newTile: called to initalise and return a new tile
-function new_tile(colour,type)
+function new_tile(colour,type,type2)
     local t = {}
     -- states:
     -- "vertical" = vertical powerup
@@ -7,6 +7,7 @@ function new_tile(colour,type)
     -- "explosion" = explosion powerup
     -- "remover" = hypercube powerup thing
     t.type = type or nil
+    t.type2 = type2 or nil
     -- Animation variables
     t.anim = {}
     t.anim.offset = 0       -- offset (y in percent from -1 to 1)
@@ -16,6 +17,8 @@ function new_tile(colour,type)
     t.anim.swap = {}
     t.anim.swap.x = 0       -- x pos for swap animation
     t.anim.swap.y = 0       -- y pos for swap animation
+    -- Score to add when tile disappears
+    t.score = 0
     -- True if matched and needs to be removed
     t.matched = false
     -- True if tile was checked for match in current analyze (so far only used for powerup shizzle)
@@ -26,21 +29,25 @@ function new_tile(colour,type)
     if (colour) then
         t.colour = colour
     else
-        local col = love.math.random(1,7)
-        if (col == 1) then
-            t.colour = "red"
-        elseif (col == 2) then
-            t.colour = "orange"
-        elseif (col == 3) then
-            t.colour = "yellow"
-        elseif (col == 4) then
-            t.colour = "green"
-        elseif (col == 5) then
-            t.colour = "blue"
-        elseif (col == 6) then
-            t.colour = "purple"
-        elseif (col == 7) then
-            t.colour = "white"
+        if (type == "remover") then
+            t.colour = nil
+        else
+            local col = love.math.random(1,7)
+            if (col == 1) then
+                t.colour = "red"
+            elseif (col == 2) then
+                t.colour = "orange"
+            elseif (col == 3) then
+                t.colour = "yellow"
+            elseif (col == 4) then
+                t.colour = "green"
+            elseif (col == 5) then
+                t.colour = "blue"
+            elseif (col == 6) then
+                t.colour = "purple"
+            elseif (col == 7) then
+                t.colour = "white"
+            end
         end
     end
     -- Get image based on states

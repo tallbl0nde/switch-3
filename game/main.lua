@@ -8,9 +8,7 @@ function love.load()
     width = love.graphics.getWidth()
     height = love.graphics.getHeight()
     screen = 0
-    while (screen == 0) do
-        require("load")()
-    end
+    require("load")()
     Board1 = Board
     Board1:new(500,20,8,680)
 

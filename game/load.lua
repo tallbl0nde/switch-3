@@ -1,23 +1,25 @@
-local files = love.filesystem.getDirectoryItems("resources")
+local files = love.filesystem.getDirectoryItems("resources/img/tile")
 local step = 1
 
 local function load()
-    if (step > #files) then
-        screen = 1
-        return
+    --Background
+    background = love.graphics.newImage("resources/img/bg/background.jpg")
+
+    --Font (image)
+    for i=0,9 do
+        _G["VGERBold_"..i] = love.graphics.newImage("resources/img/font/VGERBold/"..i..".png")
     end
-    if (files[step] == "font") then step = step + 1 return end
-    local current = string.match(files[step],"(.+)%.")
 
-    --Draw stuff
-    love.graphics.setBackgroundColor(0.2,0.2,0.2)
-    love.graphics.print("Loading: "..current.." ("..step.."/"..#files..")",0,height-50)
-    love.graphics.rectangle("line",0,height-20,width,20)
-    love.graphics.rectangle("fill",0,height-20,width*(step/#files),20)
+    --Tiles
+    while not (step > #files) do
+        local current = string.match(files[step],"(.+)%.")
+        _G[current] = love.graphics.newImage("resources/img/tile/"..files[step])
+        step = step + 1
+    end
+    print(step,#files)
 
-    --Load into memory
-    _G[current] = love.graphics.newImage("resources/"..files[step])
-    step = step + 1
+    --Ui
+    ui_score = love.graphics.newImage("resources/img/ui/ui_score.png")
 end
 
 return load

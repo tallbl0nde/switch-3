@@ -17,8 +17,7 @@ function new_tile(colour,type,type2)
     t.anim.swap = {}
     t.anim.swap.x = 0       -- x pos for swap animation
     t.anim.swap.y = 0       -- y pos for swap animation
-    -- Score to add when tile disappears
-    t.score = 0
+
     -- True if matched and needs to be removed
     t.matched = false
     -- True if tile was checked for match in current analyze (so far only used for powerup shizzle)

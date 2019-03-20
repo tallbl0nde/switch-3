@@ -13,11 +13,14 @@ function new_tile(colour,type,type2)
     t.anim.offset = 0       -- offset (y in percent from -1 to 1)
     t.anim.velocity = 0     -- velocity of gem (when falling)
     t.anim.swapped = false  -- prevents infinite swaps :D
-    t.anim.size = 1         -- size of gem (used for animations too)
+    t.anim.size = 1      -- size of gem (used for animations too)
     t.anim.swap = {}
     t.anim.swap.x = 0       -- x pos for swap animation
     t.anim.swap.y = 0       -- y pos for swap animation
-
+    t.anim.glow = 0         -- rotation of glow (explosion powerup)
+    t.anim.glowOn = true
+    -- Stores multiplier at time of match
+    t.score_mult = 0
     -- True if matched and needs to be removed
     t.matched = false
     -- True if tile was checked for match in current analyze (so far only used for powerup shizzle)

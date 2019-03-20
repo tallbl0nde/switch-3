@@ -1,2 +1,1 @@
 - Swapping animation bugs out after long up time
-- Swapping remover with gem which will make a match still makes match

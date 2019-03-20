@@ -16,7 +16,6 @@ local function load()
         _G[current] = love.graphics.newImage("resources/img/tile/"..files[step])
         step = step + 1
     end
-    print(step,#files)
 
     --Ui
     ui_score = love.graphics.newImage("resources/img/ui/ui_score.png")

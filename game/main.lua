@@ -14,7 +14,7 @@ function love.load()
     Board1:new(500,20,8,680)
 
     font14 = love.graphics.newFont(14)
-    font25 = love.graphics.newFont("resources/font/Bebas.ttf",25)
+    font25 = love.graphics.newFont(25)
 end
 
 function love.update(dt)

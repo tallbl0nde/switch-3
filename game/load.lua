@@ -1,25 +1,14 @@
-local files = love.filesystem.getDirectoryItems("resources/img/tile")
-local step = 1
+local RESOURCES = "resources/img/"
+local dirs = love.filesystem.getDirectoryItems(RESOURCES)
 
 local function load()
-    --Background
-    background = love.graphics.newImage("resources/img/bg/background.jpg")
-
-    --Font (image)
-    for i=0,9 do
-        _G["VGERBold_"..i] = love.graphics.newImage("resources/img/font/VGERBold/"..i..".png")
+    for i=1,#dirs do
+        local files = love.filesystem.getDirectoryItems(RESOURCES..dirs[i])
+        for j=1,#files do
+            print(dirs[i].."/"..files[j])
+            _G[dirs[i].."_"..string.match(files[j],"(.+)%.")] = love.graphics.newImage(RESOURCES..dirs[i].."/"..files[j])
+        end
     end
-
-    --Tiles
-    while not (step > #files) do
-        local current = string.match(files[step],"(.+)%.")
-        _G[current] = love.graphics.newImage("resources/img/tile/"..files[step])
-        step = step + 1
-    end
-
-    --Ui
-    shuffle_img = love.graphics.newImage("resources/img/ui/shuffle.png")
-    ui_score = love.graphics.newImage("resources/img/ui/ui_score.png")
 end
 
 return load

@@ -526,15 +526,15 @@ function Board:draw()
                 local i,j=0,0
                 --Find total width of number
                 for digit in string.gmatch(self.animscore[x][y].pts, "%d") do
-                    j = j + _G["VGERBold_"..digit]:getWidth()
+                    j = j + _G["font_VGERBold_"..digit]:getWidth()
                 end
                 --Vars reduce calculations
                 local X = round(self.grid_size_px*(x-0.5)-(j/2))
-                local Y = round(self.grid_size_px*(y-0.5+self.animscore[x][y].offset)-(VGERBold_0:getHeight()/2))
+                local Y = round(self.grid_size_px*(y-0.5+self.animscore[x][y].offset)-(font_VGERBold_0:getHeight()/2))
                 --Draw each character
                 for digit in string.gmatch(self.animscore[x][y].pts, "%d") do
-                    love.graphics.draw(_G["VGERBold_"..digit],X+i,Y)
-                    i = i + _G["VGERBold_"..digit]:getWidth()
+                    love.graphics.draw(_G["font_VGERBold_"..digit],X+i,Y)
+                    i = i + _G["font_VGERBold_"..digit]:getWidth()
                 end
                 love.graphics.setColor(1,1,1,1)
             end
@@ -550,7 +550,7 @@ function Board:draw()
     --Draw shuffling message
     if (self.state == "preshuffle" or self.state == "postshuffle") then
         love.graphics.setColor(1,1,1,self.shuffle_alpha)
-        centeredImage(shuffle_img,self.grid_size_px*self.grid_size/2,self.grid_size_px*self.grid_size/2,self.size/shuffle_img:getWidth())
+        centeredImage(ui_shuffle_img,self.grid_size_px*self.grid_size/2,self.grid_size_px*self.grid_size/2,self.size/shuffle_img:getWidth())
     end
 
     --Draw obliterate animations

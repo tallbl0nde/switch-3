@@ -16,6 +16,8 @@ end
 
 --Draw a image centered at (x,y)
 function centeredImage(img,x,y,sx,sy)
+    sx = sx or 1
+    sy = sy or sx or 1
     local X = round(x-(sx*img:getWidth())/2)
     local Y = round(y-(sy*img:getHeight())/2)
     love.graphics.draw(img,X,Y,r or 0,sx or 1,sy or 1)

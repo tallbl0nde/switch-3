@@ -1,1 +1,1 @@
-- Swapping animation bugs out after long up time
+- Generally check all numbers for out of bounds issues

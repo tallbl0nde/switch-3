@@ -18,6 +18,7 @@ local function load()
     end
 
     --Ui
+    shuffle_img = love.graphics.newImage("resources/img/ui/shuffle.png")
     ui_score = love.graphics.newImage("resources/img/ui/ui_score.png")
 end
 

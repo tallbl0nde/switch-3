@@ -5,6 +5,7 @@ require "game"
 require "board"
 
 function love.load()
+    love.math.setRandomSeed(os.time())
     width = love.graphics.getWidth()
     height = love.graphics.getHeight()
     screen = 0

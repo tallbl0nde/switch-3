@@ -4,7 +4,7 @@ function Board:new(x,y,grid_size,s)
     self.x = x or 0
     self.y = y or 0
     self.grid_size = grid_size or 8
-    self.size = s or height
+    self.size = s or 720
     self.grid_size_px = self.size/self.grid_size
 
     --Stores coords/properties of particles
@@ -49,8 +49,10 @@ function Board:new(x,y,grid_size,s)
     --Variables for score related things
     self.score = 0
     self.score_multiplier = 1
+    --Variable for particles
+    self.showParticles = true
     --Variables for hint icon (show: fade in/out; draw: actually draw)
-    self.hint = {x = nil, y = nil, offset = 0, time = 0, alpha = 0, show = false, draw = false}
+    self.hint = {x = nil, y = nil, offset = 0, time = 0, alpha = 0, show = false, draw = false, active = true}
 end
 
 --Update is literally only used for animations (and analysing when not animating) :D
@@ -179,7 +181,9 @@ function Board:update(dt)
         end
 
         --Hint show/hide
-        self.hint.time = self.hint.time + dt
+        if (self.hint.active or self.hint.time >= 10) then
+            self.hint.time = self.hint.time + dt
+        end
         if (self.hint.time > 15) then
             self.hint.show = "no"
         end
@@ -422,7 +426,7 @@ function Board:update(dt)
 
     --Animate particles
     for k, v in pairs(self.animparticles) do
-        if (v.y > height) then
+        if (v.y > 720) then
             table.remove(self.animparticles,k)
         else
             v.x = v.x + (v.vx*60*dt)
@@ -471,11 +475,15 @@ function Board:draw()
             if ((x+y)%2 == 0) then
                 love.graphics.setColor(0,0,0,0.7)
             else
-                love.graphics.setColor(0.05,0.05,0.05,0.7)
+                love.graphics.setColor(0.07,0.07,0.07,0.7)
             end
             love.graphics.rectangle("fill",(x-1)*self.grid_size_px,(y-1)*self.grid_size_px,self.grid_size_px,self.grid_size_px)
         end
     end
+
+    --Draw border
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.draw(ui_boarder,-20,-20)
 
     --Loop over each grid square and draw stuff ;)
     for x=1,self.grid_size do
@@ -550,7 +558,7 @@ function Board:draw()
     --Draw shuffling message
     if (self.state == "preshuffle" or self.state == "postshuffle") then
         love.graphics.setColor(1,1,1,self.shuffle_alpha)
-        centeredImage(ui_shuffle_img,self.grid_size_px*self.grid_size/2,self.grid_size_px*self.grid_size/2,self.size/shuffle_img:getWidth())
+        centeredImage(ui_shuffle,self.grid_size_px*self.grid_size/2,self.grid_size_px*self.grid_size/2,self.size/ui_shuffle:getWidth())
     end
 
     --Draw obliterate animations
@@ -1231,6 +1239,9 @@ end
 
 --Called to add particles at relevant location
 function Board:addParticles(x,y,min,max,colour,big)
+    if (not self.showParticles) then
+        return
+    end
     local num = love.math.random(min,max)
     for a=1,max do
         --Velocity variables

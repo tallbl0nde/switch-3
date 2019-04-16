@@ -48,7 +48,7 @@ ROMFS           := game
 APP_TITLE       := Switch³
 APP_AUTHOR      := tallbl0nde
 APP_TITLEID     := 1102
-APP_VERSION     := dev
+APP_VERSION     := 0.1a
 APP_DESCRIPTION := NA
 
 ICON            := icon.jpg

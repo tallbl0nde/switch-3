@@ -25,8 +25,8 @@ end
 
 --Draw centered text
 function printC(txt,x,y,size)
-	local w = size:getWidth(txt)/2
-	local h = size:getHeight(txt)/2
+	local w = round(size:getWidth(txt)/2)
+	local h = round(size:getHeight(txt)/2)
 	love.graphics.print(txt,x-w,y-h)
 end
 
@@ -42,4 +42,17 @@ function randomFloat(min, max, precision)
 
 	local powerOfTen = 10 ^ precision
 	return math.floor(unrounded * powerOfTen + 0.5) / powerOfTen
+end
+
+--Format an integer with commas
+function commaNumber(num)
+    str = tostring(num)
+    ret = ""
+    local p = #str
+    while (p-2 > 1) do
+        ret = ","..string.sub(str,p-2,p)..ret
+        p=p-3
+    end
+    ret = string.sub(str,1,p)..ret
+    return ret
 end

@@ -5,7 +5,8 @@ A match 3 game for the Nintendo Switch [running using LovePotion]
 ## Credits
 
 **Fonts:**
-[Voyager Grotesque Bold](https://www.behance.net/gallery/6636573/VGER-Grotesque)
+<br />[Voyager Grotesque Bold](https://www.behance.net/gallery/6636573/VGER-Grotesque)
+<br />[Dosis](https://fonts.google.com/specimen/Dosis)
 
 **Tiles:**
-Colourful Gems designed by [Freepik](http://freepik.com)
+<br />Colourful Gems designed by [Freepik](http://freepik.com)

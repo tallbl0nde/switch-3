@@ -52,6 +52,7 @@ function writeData(init)
     if (init) then
         data = data.."endless.gemColour:-1".."\n"
         data = data.."endless.gemType:-1".."\n"
+        data = data.."endless.collection:----------------------------------------------------------------------------------------------------".."\n"
         data = data.."endless.score:0".."\n"
         data = data.."playtime:0".."\n"
         data = data.."setting.musicVolume:1".."\n"

@@ -37,6 +37,21 @@ function Board:new(x,y,grid_size,s)
         end
     end
 
+    --Create grid canvas
+    self.gridCanvas = love.graphics.newCanvas(self.size,self.size)
+    love.graphics.setCanvas(self.gridCanvas)
+    for x=1,self.grid_size do
+        for y=1,self.grid_size do
+            if ((x+y)%2 == 0) then
+                love.graphics.setColor(0,0,0,1)
+            else
+                love.graphics.setColor(0.07,0.07,0.07,1)
+            end
+            love.graphics.rectangle("fill",(x-1)*self.grid_size_px,(y-1)*self.grid_size_px,self.grid_size_px,self.grid_size_px)
+        end
+    end
+    love.graphics.setCanvas()
+
     --Variable for current board state
     self.state = "normal"
     --Shuffle fade in animation
@@ -514,16 +529,8 @@ function Board:draw()
     love.graphics.translate(self.x,self.y)
 
     --Draw grid background
-    for x=1,self.grid_size do
-        for y=1,self.grid_size do
-            if ((x+y)%2 == 0) then
-                love.graphics.setColor(0,0,0,0.7)
-            else
-                love.graphics.setColor(0.07,0.07,0.07,0.7)
-            end
-            love.graphics.rectangle("fill",(x-1)*self.grid_size_px,(y-1)*self.grid_size_px,self.grid_size_px,self.grid_size_px)
-        end
-    end
+    love.graphics.setColor(1,1,1,0.7)
+    love.graphics.draw(self.gridCanvas,0,0)
 
     --Draw border
     love.graphics.setColor(1,1,1,1)

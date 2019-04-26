@@ -21,22 +21,43 @@ local UIPosX = 245
 local UIPosY = -300
 local vx = 0
 local textY = 0
+local rec = {x = 0, y = 0, alpha = 0}
 --Time until hint is ready
 local hintCountdown = 10
 --"Level" variables
 local animProgress = 0
 local progress = 0
 local level = 0
---Scores matching each level
-local score = { 0,      10000,  20000,  30000,  40000,  50000,  60000,  70000,  80000,  90000,  100000,
---              0       1       2       3       4       5       6       7       8       9       10
-                        120000, 140000, 160000, 180000, 200000, 230000, 260000, 300000, 350000, 400000,
---                      11      12      13      14      15      16      17      18      19      20
-                        450000, 500000, 550000, 600000, 650000, 700000, 750000, 800000, 850000, 900000,
---                      21      22      23      24      25      26      27      28      29      30
-                        1000000,1100000,1200000,1300000,1400000,1500000,1600000,1700000,1800000,2000000
---                      31      32      33      34      35      36      37      38      39      40
+--Function for mapping levels to scores
+local function score(lvl)
+    if (lvl > 101) then
+        return (5000000 + (lvl-101)*250000)
+    elseif (lvl == 101) then
+        return 5000000
+    else
+        return 1000*round(math.pow((lvl-1),1.85))
+    end
+end
+
+--Color 'map' for collection thing
+local colorMap = {  {{0.91,0.56,0.20,1},{0.91,0.56,0.20,1},{0.91,0.56,0.20,1},{0.91,0.56,0.20,1},{0.91,0.56,0.20,1},{0.91,0.56,0.20,1},{0.91,0.56,0.20,1},{0.91,0.56,0.20,1},{0.91,0.56,0.20,1},{0.91,0.56,0.20,1}},
+                    {{0.91,0.58,0.20,1},{0.97,0.77,0.12,1},{0.97,0.74,0.12,1},{0.97,0.77,0.12,1},{0.91,0.58,0.20,1},{0.91,0.58,0.20,1},{0.91,0.58,0.20,1},{0.91,0.58,0.20,1},{0.91,0.58,0.20,1},{0.91,0.58,0.20,1}},
+                    {{0.97,0.77,0.12,1},{0.97,0.74,0.12,1},{0.87,0.69,0.12,1},{0.97,0.74,0.12,1},{0.97,0.77,0.12,1},{0.91,0.59,0.20,1},{0.91,0.59,0.20,1},{0.91,0.59,0.20,1},{0.91,0.59,0.20,1},{0.91,0.59,0.20,1}},
+                    {{0.97,0.74,0.12,1},{0.87,0.69,0.12,1},{0.68,0.64,0.55,1},{0.68,0.64,0.55,1},{0.97,0.74,0.12,1},{0.92,0.61,0.19,1},{0.92,0.61,0.19,1},{0.68,0.64,0.55,1},{0.92,0.61,0.19,1},{0.92,0.61,0.19,1}},
+                    {{0.97,0.77,0.12,1},{0.68,0.64,0.55,1},{0.62,0.58,0.47,1},{0.20,0.43,0.58,1},{0.62,0.58,0.47,1},{0.92,0.63,0.19,1},{0.68,0.64,0.55,1},{0.62,0.58,0.47,1},{0.47,0.45,0.40,1},{0.92,0.63,0.19,1}},
+                    {{0.68,0.64,0.55,1},{0.62,0.58,0.47,1},{0.54,0.50,0.40,1},{0.50,0.46,0.38,1},{0.25,0.49,0.64,1},{0.62,0.58,0.47,1},{0.62,0.58,0.47,1},{0.68,0.64,0.55,1},{0.51,0.49,0.43,1},{0.47,0.45,0.40,1}},
+                    {{0.62,0.58,0.47,1},{0.19,0.38,0.18,1},{0.62,0.58,0.47,1},{0.54,0.50,0.40,1},{0.20,0.43,0.58,1},{0.54,0.50,0.40,1},{0.62,0.58,0.47,1},{0.53,0.52,0.49,1},{0.51,0.49,0.43,1},{0.19,0.38,0.18,1}},
+                    {{0.19,0.38,0.18,1},{0.18,0.35,0.16,1},{0.19,0.38,0.18,1},{0.68,0.64,0.55,1},{0.20,0.43,0.58,1},{0.23,0.45,0.60,1},{0.49,0.48,0.45,1},{0.49,0.48,0.45,1},{0.19,0.38,0.18,1},{0.18,0.35,0.16,1}},
+                    {{0.18,0.35,0.16,1},{0.16,0.32,0.15,1},{0.18,0.35,0.16,1},{0.57,0.56,0.51,1},{0.57,0.56,0.51,1},{0.23,0.45,0.60,1},{0.19,0.42,0.56,1},{0.55,0.55,0.53,1},{0.18,0.35,0.16,1},{0.16,0.32,0.15,1}},
+                    {{0.53,0.52,0.49,1},{0.27,0.21,0.08,1},{0.53,0.52,0.49,1},{0.53,0.52,0.49,1},{0.53,0.52,0.49,1},{0.48,0.47,0.46,1},{0.22,0.44,0.59,1},{0.53,0.52,0.49,1},{0.53,0.52,0.49,1},{0.27,0.21,0.08,1}}
 }
+--Variables storing canvas
+local collectCanvas = love.graphics.newCanvas(150,150)
+local gridCanvas = love.graphics.newCanvas(150,150)
+
+--Local functions (not accessible outside file)
+local save
+local generateCollection
 
 function F:load()
     --Init the board
@@ -84,12 +105,28 @@ function F:load()
             Board1.tiles[math.ceil(i/Board1.grid_size)][((i-1)%Board1.grid_size)+1] = new_tile(c,t)
         end
     end
+
     --Determine 'level' (calculate from score)
-    while (saveData.endless.score > score[level+1]) do
+    while (saveData.endless.score > score(level+1)) do
         level = level + 1
     end
-    progress = (Board1.score-score[level])/(score[level+1]-score[level])
+    progress = (Board1.score-score(level))/(score(level+1)-score(level))
     animProgress = progress
+
+    --Generate "collection" canvases
+    love.graphics.setCanvas(gridCanvas)
+    for x=1,10 do
+        for y=1,10 do
+            if ((x+y)%2 == 0) then
+                love.graphics.setColor(0.04,0.04,0.04,1)
+            else
+                love.graphics.setColor(0.07,0.07,0.07,1)
+            end
+            love.graphics.rectangle("fill",(x-1)*15,(y-1)*15,15,15)
+        end
+    end
+    love.graphics.setCanvas()
+    generateCollection()
 end
 
 function F:update(dt)
@@ -131,13 +168,30 @@ function F:update(dt)
     end
 
     --Update progress on level
-    progress = (Board1.score-score[level])/(score[level+1]-score[level])
+    progress = (Board1.score-score(level))/(score(level+1)-score(level))
     if (progress > 1) then
         progress = 1
     end
-    if (Board1.score >= score[level+1]) then
+    if (Board1.score >= score(level+1)) then
         level = level+1
         textY = -1
+        --Add tile to collection
+        if (level < 101) then
+            local i = love.math.random(1,100)
+            while (saveData.endless.collection:sub(i,i) == ".") do
+                i = i - 1
+                if (i < 1) then
+                    i = 100
+                end
+            end
+            saveData.endless.collection = saveData.endless.collection:sub(1, i-1) ..'.'.. saveData.endless.collection:sub(i+1)
+            --Change animation variables
+            rec.y = math.ceil(i/10)
+            rec.x = i-(rec.y-1)*10
+            rec.alpha = 1
+            --Regenerate canvas
+            generateCollection()
+        end
     end
 
     --Animate progress bar
@@ -169,6 +223,11 @@ function F:update(dt)
         if (textY < -80) then
             textY = 0
         end
+    end
+
+    --Animate new tile in collection
+    if (rec.alpha > 0) then
+        rec.alpha = rec.alpha - dt*0.8
     end
 end
 
@@ -244,11 +303,24 @@ function F:draw()
         printC("x"..Board1.score_multiplier,2,180,font23)
         love.graphics.setFont(font35)
         printC(commaNumber(Board1.score),2,128,font35)
+        love.graphics.print(score(level+1),0,140)
 
         --Level up text
         if (textY < 0) then
             love.graphics.setColor(1,1,1,(55+textY)/43)
             centeredImage(ui_level_up_text,0,43+textY)
+            love.graphics.setColor(1,1,1,1)
+        end
+
+        --Collection (middle)
+        love.graphics.setColor(1,1,1,0.7)
+        love.graphics.draw(gridCanvas,-75,270)
+        love.graphics.setColor(1,1,1,1)
+        love.graphics.draw(collectCanvas,-75,270)
+        centeredImage(endless_border,0,347)
+        if (rec.alpha > 0) then
+            love.graphics.setColor(1,1,1,rec.alpha)
+            love.graphics.rectangle("fill",-75+(15*(rec.x-1)),270+(15*(rec.y-1)),15,15)
             love.graphics.setColor(1,1,1,1)
         end
 
@@ -334,10 +406,10 @@ function F:touchreleased(id,x,y)
 
         --Save
         elseif (x > 645 and x < 800 and y > 445 and y < 515 and isPressed.save) then
-            self:save()
+            save()
         --Save and quit
         elseif (x > 480 and x < 800 and y > 525 and y < 595 and isPressed.saveandquit) then
-            self:save()
+            save()
             love.event.quit()
         end
     else
@@ -358,7 +430,7 @@ function F:touchreleased(id,x,y)
     end
 end
 
-function F:save()
+save = function()
     --Save tile properties
     local gc = ""
     local gt = ""
@@ -402,6 +474,21 @@ function F:save()
     saveData.endless.score = Board1.score
     --Write to file
     writeData()
+end
+
+--Generates the canvas for the 'collection'
+generateCollection = function()
+    love.graphics.setCanvas(collectCanvas)
+    for y=1,10,1 do
+        for x=1,10,1 do
+            local i = ((y-1)*10)+x
+            if (saveData.endless.collection:sub(i,i) == '.') then
+                love.graphics.setColor(unpack(colorMap[y][x]))
+                love.graphics.draw(endless_tile,(x-1)*15,(y-1)*15)
+            end
+        end
+    end
+    love.graphics.setCanvas()
 end
 
 return F

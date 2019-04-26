@@ -20,9 +20,11 @@ local isPressed = {
 local UIPosX = 245
 local UIPosY = -300
 local vx = 0
+local textY = 0
 --Time until hint is ready
 local hintCountdown = 10
 --"Level" variables
+local animProgress = 0
 local progress = 0
 local level = 0
 --Scores matching each level
@@ -86,6 +88,8 @@ function F:load()
     while (saveData.endless.score > score[level+1]) do
         level = level + 1
     end
+    progress = (Board1.score-score[level])/(score[level+1]-score[level])
+    animProgress = progress
 end
 
 function F:update(dt)
@@ -126,13 +130,45 @@ function F:update(dt)
         end
     end
 
-    --Progress on level
+    --Update progress on level
     progress = (Board1.score-score[level])/(score[level+1]-score[level])
     if (progress > 1) then
         progress = 1
     end
     if (Board1.score >= score[level+1]) then
         level = level+1
+        textY = -1
+    end
+
+    --Animate progress bar
+    --Increase progress on match
+    if (animProgress < progress) then
+        local add = (math.pi*(progress-animProgress)*dt)/1.5
+        if (add < 0.0001) then
+            animProgress = progress
+        end
+        animProgress = animProgress + add
+        if (animProgress > progress) then
+            animProgress = progress
+        end
+    --Decrease progress on level up
+    elseif (animProgress > progress) then
+        local sub = (math.pi*(animProgress-progress)*dt)/1.5
+        if (sub < 0.0001) then
+            animProgress = progress
+        end
+        animProgress = animProgress - sub
+        if (animProgress < progress) then
+            animProgress = progress
+        end
+    end
+
+    --Animate level up text
+    if (textY < 0) then
+        textY = textY - 40*dt
+        if (textY < -80) then
+            textY = 0
+        end
     end
 end
 
@@ -197,7 +233,7 @@ function F:draw()
         love.graphics.setColor(1,1,1,1)
 
         --Top 'cluster'
-        love.graphics.rectangle("fill",-125,97,250*progress,65)
+        love.graphics.rectangle("fill",-125,97,250*animProgress,65)
         centeredImage(ui_top_cluster,0,130)
         love.graphics.setFont(font23)
         if (saveData.setting.showClock) then
@@ -208,6 +244,13 @@ function F:draw()
         printC("x"..Board1.score_multiplier,2,180,font23)
         love.graphics.setFont(font35)
         printC(commaNumber(Board1.score),2,128,font35)
+
+        --Level up text
+        if (textY < 0) then
+            love.graphics.setColor(1,1,1,(55+textY)/43)
+            centeredImage(ui_level_up_text,0,43+textY)
+            love.graphics.setColor(1,1,1,1)
+        end
 
         --Bottom 'cluster'
         love.graphics.rectangle("fill",-80,548,hintCountdown*16,5)

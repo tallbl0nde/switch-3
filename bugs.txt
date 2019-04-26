@@ -1,1 +1,4 @@
 - Generally check all numbers for out of bounds issues
+- Selecting a tile and then swiping "across" works weirdly but it shouldn't
+- Weird behaviour for touch and gamepad at same time
+- Selector flashes up on hover after touch swap

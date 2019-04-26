@@ -23,6 +23,15 @@ function centeredImage(img,x,y,sx,sy)
     love.graphics.draw(img,X,Y,r or 0,sx or 1,sy or 1)
 end
 
+--Draw a image centered at (x,y) [without rounding]
+function centeredImage2(img,x,y,sx,sy)
+    sx = sx or 1
+    sy = sy or sx or 1
+    local X = x-(sx*img:getWidth())/2
+    local Y = y-(sy*img:getHeight())/2
+    love.graphics.draw(img,X,Y,r or 0,sx or 1,sy or 1)
+end
+
 --Draw centered text
 function printC(txt,x,y,size)
 	local w = round(size:getWidth(txt)/2)

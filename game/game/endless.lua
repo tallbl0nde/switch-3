@@ -7,12 +7,12 @@ local Board1
 local showMenu = false
 --Which button is currently pressed (used for highlighting)
 local isPressed = {
+    backtogame = false,
+    clock = false,
+    help = false,
     hint = false,
     menu = false,
     particle = false,
-    clock = false,
-    backtogame = false,
-    help = false,
     save = false,
     saveandquit = false
 }
@@ -24,7 +24,7 @@ local vx = 0
 local hintCountdown = 10
 --"Level" variables
 local progress = 0
-local level = 1
+local level = 0
 --Scores matching each level
 local score = { 0,      10000,  20000,  30000,  40000,  50000,  60000,  70000,  80000,  90000,  100000,
 --              0       1       2       3       4       5       6       7       8       9       10
@@ -63,6 +63,8 @@ function F:load()
                 c = "purple"
             elseif (c == "w") then
                 c = "white"
+            else
+                c = nil
             end
             --Get types
             if (t == "v") then
@@ -71,21 +73,24 @@ function F:load()
                 t = "horizontal"
             elseif (t == "r") then
                 t = "remover"
-                c = nil
             elseif (t == "e") then
                 t = "explosion"
             else
                 t = nil
             end
+            --Populate board with saved tiles
             Board1.tiles[math.ceil(i/Board1.grid_size)][((i-1)%Board1.grid_size)+1] = new_tile(c,t)
         end
+    end
+    --Determine 'level' (calculate from score)
+    while (saveData.endless.score > score[level+1]) do
+        level = level + 1
     end
 end
 
 function F:update(dt)
     --Update board stuff
     Board1:update(dt)
-    saveData.endless.score = Board1.score
     --Animate menu move in/out
     if (showMenu == "movein") then
         vx = vx + 20*dt
@@ -112,6 +117,7 @@ function F:update(dt)
             vx = 0
             showMenu = false
         end
+    --Reduce hint cooldown
     elseif (showMenu == false) then
         if (hintCountdown > 0) then
             hintCountdown = hintCountdown - dt
@@ -122,6 +128,9 @@ function F:update(dt)
 
     --Progress on level
     progress = (Board1.score-score[level])/(score[level+1]-score[level])
+    if (progress > 1) then
+        progress = 1
+    end
     if (Board1.score >= score[level+1]) then
         level = level+1
     end
@@ -134,87 +143,97 @@ function F:draw()
 
     --Draw menu things
     if (showMenu ~= false) then
+        love.graphics.push("all")
+        love.graphics.translate(640,UIPosY)
+        love.graphics.setColor(1,1,1,1)
+
         if (isPressed.backtogame) then
-            centeredImage(ui_game_menu_backtogame,640,UIPosY)
+            centeredImage(ui_game_menu_backtogame,0,0)
         elseif (isPressed.help) then
-            centeredImage(ui_game_menu_help,640,UIPosY)
+            centeredImage(ui_game_menu_help,0,0)
         elseif (isPressed.save) then
-            centeredImage(ui_game_menu_save,640,UIPosY)
+            centeredImage(ui_game_menu_save,0,0)
         elseif (isPressed.saveandquit) then
-            centeredImage(ui_game_menu_saveandquit,640,UIPosY)
+            centeredImage(ui_game_menu_saveandquit,0,0)
         else
-            centeredImage(ui_game_menu,640,UIPosY)
+            centeredImage(ui_game_menu,0,0)
         end
         if (saveData.setting.showParticles) then
             if (isPressed.particle) then
-                centeredImage(ui_toggle_on_touch,635,UIPosY-69,0.7)
+                centeredImage(ui_toggle_on_touch,-5,-69,0.7)
             else
-                centeredImage(ui_toggle_on,635,UIPosY-69,0.7)
+                centeredImage(ui_toggle_on,-5,-69,0.7)
             end
         else
             if (isPressed.particle) then
-                centeredImage(ui_toggle_off_touch,635,UIPosY-69,0.7)
+                centeredImage(ui_toggle_off_touch,-5,-69,0.7)
             else
-                centeredImage(ui_toggle_off,635,UIPosY-69,0.7)
+                centeredImage(ui_toggle_off,-5,-69,0.7)
             end
         end
         if (saveData.setting.showClock) then
             if (isPressed.clock) then
-                centeredImage(ui_toggle_on_touch,635,UIPosY-30,0.7)
+                centeredImage(ui_toggle_on_touch,-5,-30,0.7)
             else
-                centeredImage(ui_toggle_on,635,UIPosY-30,0.7)
+                centeredImage(ui_toggle_on,-5,-30,0.7)
             end
         else
             if (isPressed.clock) then
-                centeredImage(ui_toggle_off_touch,635,UIPosY-30,0.7)
+                centeredImage(ui_toggle_off_touch,-5,-30,0.7)
             else
-                centeredImage(ui_toggle_off,635,UIPosY-30,0.7)
+                centeredImage(ui_toggle_off,-5,-30,0.7)
             end
         end
+
+        love.graphics.pop()
     end
 
     --Draw board/side things
     if (showMenu ~= true) then
         Board1:draw()
 
+        love.graphics.push("all")
+        love.graphics.translate(UIPosX,0)
+        love.graphics.setColor(1,1,1,1)
+
         --Top 'cluster'
-        love.graphics.setColor(1,1,1,1)
-        love.graphics.rectangle("fill",UIPosX-125,97,250*progress,65)
-        love.graphics.setColor(1,1,1,1)
-        centeredImage(ui_top_cluster,UIPosX,130)
+        love.graphics.rectangle("fill",-125,97,250*progress,65)
+        centeredImage(ui_top_cluster,0,130)
         love.graphics.setFont(font23)
         if (saveData.setting.showClock) then
-            printC(systemTime,UIPosX+2,77,font23)
+            printC(systemTime,2,77,font23)
         else
-            printC("Level "..level,UIPosX+2,77,font23)
+            printC("Level "..level,2,77,font23)
         end
-        printC("x"..Board1.score_multiplier,UIPosX+2,180,font23)
+        printC("x"..Board1.score_multiplier,2,180,font23)
         love.graphics.setFont(font35)
-        printC(commaNumber(Board1.score),UIPosX+2,128,font35)
+        printC(commaNumber(Board1.score),2,128,font35)
 
         --Bottom 'cluster'
-        love.graphics.rectangle("fill",UIPosX-80,548,hintCountdown*16,5)
+        love.graphics.rectangle("fill",-80,548,hintCountdown*16,5)
         if (isPressed.hint) then
-            centeredImage(ui_bottom_cluster_hint,UIPosX,575)
+            centeredImage(ui_bottom_cluster_hint,0,575)
         elseif (isPressed.menu) then
-            centeredImage(ui_bottom_cluster_menu,UIPosX,575)
+            centeredImage(ui_bottom_cluster_menu,0,575)
         else
-            centeredImage(ui_bottom_cluster,UIPosX,575)
+            centeredImage(ui_bottom_cluster,0,575)
         end
         love.graphics.setFont(font30)
-        if (hintCountdown ~= 0) then
+        if (hintCountdown > 0) then
             love.graphics.setColor(1,1,1,0.4)
         end
-        printC("HINT",UIPosX+1,527,font30)
+        printC("HINT",1,527,font30)
+
+        love.graphics.pop()
     end
 end
 
 function F:gamepadpressed(joystick, button)
-
+    Board1:gamepadPressed(button)
 end
 
 function F:gamepadreleased(joystick, button)
-
+    Board1:gamepadReleased(button)
 end
 
 function F:touchpressed(id,x,y)
@@ -297,6 +316,7 @@ function F:touchreleased(id,x,y)
 end
 
 function F:save()
+    --Save tile properties
     local gc = ""
     local gt = ""
     for x=1,Board1.grid_size do
@@ -316,6 +336,8 @@ function F:save()
                 gc = gc.."p"
             elseif (Board1.tiles[x][y].colour == "white") then
                 gc = gc.."w"
+            else
+                gc = gc.."-"
             end
             --Get types
             if (Board1.tiles[x][y].type == "vertical") then
@@ -333,6 +355,9 @@ function F:save()
     end
     saveData.endless.gemColour = gc
     saveData.endless.gemType = gt
+    --Save score
+    saveData.endless.score = Board1.score
+    --Write to file
     writeData()
 end
 

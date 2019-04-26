@@ -53,6 +53,8 @@ function Board:new(x,y,grid_size,s)
     self.showParticles = true
     --Variables for hint icon (show: fade in/out; draw: actually draw)
     self.hint = {x = nil, y = nil, offset = 0, time = 0, alpha = 0, show = false, draw = false, active = true}
+    --Variables for selector thing
+    self.selector = {x = 1, y = 1, x2 = 1, y2 = 1, size = 1, active = true, status = "hover", alpha = 1, time = 0, held = {right = false, down = false, left = false, up = false, a = false}, holdtime = 0}
 end
 
 --Update is literally only used for animations (and analysing when not animating) :D
@@ -60,6 +62,7 @@ function Board:update(dt)
     --Normal gameplay
     if (self.state == "normal") then
         self.isAnimated = false
+        self.isSwapping = false
         for x=1,self.grid_size do
             for y=1,self.grid_size do
                 --Falling animation
@@ -75,6 +78,7 @@ function Board:update(dt)
 
                 --Swipe animation
                 if (self.tiles[x][y].anim.status == "swap") then
+                    self.isSwapping = true
                     --x (and swap back)
                     if (self.tiles[x][y].anim.x > 0) then
                         self.isAnimated = true
@@ -446,6 +450,46 @@ function Board:update(dt)
     self.removerColour[2] = math.sin(self.removerTime + 2) * 0.5 + 0.5
     self.removerColour[3] = math.sin(self.removerTime + 4) * 0.5 + 0.5
 
+    --Selector animation things
+    self.selector.time = self.selector.time + dt
+    self.selector.size = 0.95 + 0.05*math.sin((self.selector.time*math.pi))
+    --Move selector when held down
+    self.selector.holdtime = self.selector.holdtime + dt
+    if (self.selector.holdtime > 0.15 and self.selector.status == "hover") then
+        if (self.selector.held.right and self.selector.x < self.grid_size) then
+            self.selector.x = self.selector.x + 1
+            self.selector.holdtime = 0
+        end
+        if (self.selector.held.left and self.selector.x > 1) then
+            self.selector.x = self.selector.x - 1
+            self.selector.holdtime = 0
+        end
+        if (self.selector.held.up and self.selector.y > 1) then
+            self.selector.y = self.selector.y - 1
+            self.selector.holdtime = 0
+        end
+        if (self.selector.held.down and self.selector.y < self.grid_size) then
+            self.selector.y = self.selector.y + 1
+            self.selector.holdtime = 0
+        end
+    end
+    --Fade out animation
+    if (self.selector.status == "fadeout") then
+        self.selector.alpha = self.selector.alpha - (5.5*dt)
+        if (self.selector.alpha < 0) then
+            self.selector.alpha = 0
+            self.selector.active = false
+            self.selector.status = "hover"
+        end
+    --Fade in animation
+    elseif (self.selector.status == "fadein") then
+        self.selector.alpha = self.selector.alpha + (6.5*dt)
+        if (self.selector.alpha > 1) then
+            self.selector.alpha = 1
+            self.selector.status = "hover"
+        end
+    end
+
     --Analyse the board if required
     if (self.isAnimated == true) then
         self.doCheck = true
@@ -483,7 +527,7 @@ function Board:draw()
 
     --Draw border
     love.graphics.setColor(1,1,1,1)
-    love.graphics.draw(ui_boarder,-20,-20)
+    love.graphics.draw(ui_boarder,-20*(self.size/(ui_boarder:getWidth()-40)),-20*(self.size/(ui_boarder:getHeight()-40)),0,(self.size/(ui_boarder:getWidth()-40)),self.size/(ui_boarder:getHeight()-40))
 
     --Loop over each grid square and draw stuff ;)
     for x=1,self.grid_size do
@@ -514,6 +558,11 @@ function Board:draw()
                     love.graphics.setColor(1,1,1,1)
                 end
                 centeredImage(self.replacetile[x][y].img,(x-0.5+self.replacetile[x][y].anim.x)*(self.grid_size_px),(y-0.5+self.replacetile[x][y].anim.y+self.replacetile[x][y].anim.y)*(self.grid_size_px),self.replacetile[x][y].anim.size*(self.grid_size_px/self.replacetile[x][y].img:getWidth()),self.replacetile[x][y].anim.size*(self.grid_size_px/self.replacetile[x][y].img:getHeight()))
+            end
+            --Draw selectors
+            if (self.tiles[x][y].anim.status == "swap") then
+                love.graphics.setColor(0.8,0.8,0.8,self.selector.alpha)
+                centeredImage2(tile_select,self.grid_size_px*(self.tiles[x][y].anim.x+x-0.5),self.grid_size_px*(self.tiles[x][y].anim.y+y-0.5),0.85)
             end
             --Draw lasers
             if (self.animlaser[x][y].vertical) then
@@ -567,6 +616,22 @@ function Board:draw()
         centeredImage(tile_remover,(self.obX-0.5)*self.grid_size_px,(self.obY-0.5)*self.grid_size_px,self.tiles[self.obX][self.obY].anim.size*(self.grid_size_px/tile_remover:getWidth()),self.tiles[self.obX][self.obY].anim.size*(self.grid_size_px/tile_remover:getHeight()))
         love.graphics.setColor(1,1,1,self.tiles[self.obX][self.obY].anim.glow)
         centeredImage(tile_glow,(self.obX-0.5)*self.grid_size_px,(self.obY-0.5)*self.grid_size_px,1.2*(self.grid_size_px/tile_glow:getWidth()),1.2*(self.grid_size_px/tile_glow:getHeight()))
+    end
+
+    --Draw selector(s)
+    if (self.selector.active) then
+        --Draw 'main' selector
+        love.graphics.setColor(1,1,1,self.selector.alpha)
+        if (self.selector.status == "selected") then
+            self.selector.size = 0.85
+            love.graphics.setColor(0.8,0.8,0.8,self.selector.alpha)
+        end
+        centeredImage2(tile_select,self.grid_size_px*(self.selector.x-0.5),self.grid_size_px*(self.selector.y-0.5),self.selector.size)
+        --If selected draw the second selection
+        if (self.selector.status == "selected") then
+            love.graphics.setColor(1,1,1,self.selector.alpha)
+            centeredImage2(tile_select,self.grid_size_px*(self.selector.x2-0.5),self.grid_size_px*(self.selector.y2-0.5),self.selector.size)
+        end
     end
 
     --Draw particles
@@ -631,6 +696,113 @@ function Board:matchAt(x,y)
     end
 end
 
+--Handles stuff when the gamepad event is passed
+function Board:gamepadPressed(button)
+    --Activate if necessary
+    if (not self.selector.active) then
+        self.selector.active = true
+        self.selector.status = "fadein"
+        return
+    end
+    --If a is not held (ie selecting instead of 'swiping')
+    if (not self.selector.held.a) then
+        --Move selector (or second) right
+        if (button == "dpright" and self.selector.x < self.grid_size) then
+            if (self.selector.status == "selected") then
+                if (self.selector.x2 < self.selector.x + 1 and self.selector.y2 == self.selector.y) then
+                    self.selector.x2 = self.selector.x2 + 1
+                end
+            else
+                self.selector.x = self.selector.x + 1
+                self.selector.held.right = true
+                self.selector.holdtime = -0.1
+            end
+        --Move selector (or second) left
+        elseif (button == "dpleft" and self.selector.x > 1) then
+            if (self.selector.status == "selected") then
+                if (self.selector.x2 > self.selector.x - 1 and self.selector.y2 == self.selector.y) then
+                    self.selector.x2 = self.selector.x2 - 1
+                end
+            else
+                self.selector.x = self.selector.x - 1
+                self.selector.held.left = true
+                self.selector.holdtime = -0.1
+            end
+        --Move selector (or second) up
+        elseif (button == "dpup" and self.selector.y > 1) then
+            if (self.selector.status == "selected") then
+                if (self.selector.y2 > self.selector.y - 1 and self.selector.x2 == self.selector.x) then
+                    self.selector.y2 = self.selector.y2 - 1
+                end
+            else
+                self.selector.y = self.selector.y - 1
+                self.selector.held.up = true
+                self.selector.holdtime = -0.1
+            end
+        --Move selector (or second) down
+        elseif (button == "dpdown" and self.selector.y < self.grid_size) then
+            if (self.selector.status == "selected") then
+                if (self.selector.y2 < self.selector.y + 1 and self.selector.x2 == self.selector.x) then
+                    self.selector.y2 = self.selector.y2 + 1
+                end
+            else
+                self.selector.y = self.selector.y + 1
+                self.selector.held.down = true
+                self.selector.holdtime = -0.1
+            end
+        --Simulate touch on tile
+        elseif (button == "a") then
+            self.selector.held.a = true
+            self:pressed("gamepad",self.x+self.selector.x*self.grid_size_px,self.y+self.selector.y*self.grid_size_px)
+        end
+    --Else if a is held ('swiping') move second selector to appropriate side
+    else
+        if (button == "dpright" and self.selector.x < self.grid_size) then
+            self.selector.x2 = self.selector.x + 1
+            self.selector.y2 = self.selector.y
+        elseif (button == "dpleft" and self.selector.x > 1) then
+            self.selector.x2 = self.selector.x - 1
+            self.selector.y2 = self.selector.y
+        elseif (button == "dpup" and self.selector.y > 1) then
+            self.selector.y2 = self.selector.y - 1
+            self.selector.x2 = self.selector.x
+        elseif (button == "dpdown" and self.selector.y < self.grid_size) then
+            self.selector.y2 = self.selector.y + 1
+            self.selector.x2 = self.selector.x
+        end
+    end
+end
+
+--Handles stuff when the gamepad event is passed
+function Board:gamepadReleased(button)
+    --Release all held variables
+    if (button == "dpright") then
+        self.selector.held.right = false
+    elseif (button == "dpleft") then
+        self.selector.held.left = false
+    elseif (button == "dpup") then
+        self.selector.held.up = false
+    elseif (button == "dpdown") then
+        self.selector.held.down = false
+    elseif (button == "a") then
+        self.selector.held.a = false
+        --If not 'pressing' on the selector, simulate press
+        if (self.selector.x ~= self.selector.x2 or self.selector.y ~= self.selector.y2) then
+            self:released("gamepad",self.x+self.selector.x2*self.grid_size_px,self.y+self.selector.y2*self.grid_size_px)
+        else
+            self:released("gamepad",self.x+self.selector.x*self.grid_size_px,self.y+self.selector.y*self.grid_size_px)
+        end
+    elseif (button == "b") then
+        --Use b to cancel a selection
+        if (self.selector.status == "selected") then
+            self.selector.status = "hover"
+            self.selector.x = self.selector.x2
+            self.selector.y = self.selector.y2
+            self.id = nil
+        end
+    end
+end
+
 --Handles stuff when the board is pressed
 function Board:pressed(id,absX,absY)
     --self.id is used to prevent multiple touches on the board
@@ -648,6 +820,48 @@ function Board:pressed(id,absX,absY)
         self.touch_start.y = (absY-self.y)
         self.touch_start.tx = math.ceil(self.touch_start.x/(self.size/self.grid_size))
         self.touch_start.ty = math.ceil(self.touch_start.y/(self.size/self.grid_size))
+
+        --Place selector
+        if (self.selector.status == "hover") then
+            self.selector.active = true
+            self.selector.status = "selected"
+            self.selector.alpha = 1
+            self.selector.x = self.touch_start.tx
+            self.selector.y = self.touch_start.ty
+            self.selector.x2 = self.selector.x
+            self.selector.y2 = self.selector.y
+        elseif (self.selector.status == "selected") then
+            --Unselect if selecting selector ;)
+            if (self.touch_start.tx == self.selector.x and self.touch_start.ty == self.selector.y and self.selector.x == self.selector.x2 and self.selector.y == self.selector.y2) then
+                if (self.id == "gamepad") then
+                    self.selector.status = "hover"
+                else
+                    self.selector.status = "fadeout"
+                end
+            elseif (self.id ~= "gamepad") then
+                --Check if the selector can be moved based on press location
+                local check = {{1,0},{-1,0},{0,1},{0,-1}} --(coords from selector)
+                local move = true
+                for i=1,#check do
+                    local X = self.selector.x+check[i][1]
+                    local Y = self.selector.y+check[i][2]
+                    if (X < 1 or X > self.grid_size or Y < 1 or Y > self.grid_size) then
+                    else
+                        if (self.touch_start.tx == X and self.touch_start.ty == Y and self.selector.status) then
+                            move = false
+                        end
+                    end
+                end
+                --Move the selector if allowed
+                if (move) then
+                    self.selector.x = self.touch_start.tx
+                    self.selector.y = self.touch_start.ty
+                    self.selector.x2 = self.selector.x
+                    self.selector.y2 = self.selector.y
+                end
+            end
+        end
+
         --Remove hint if touching the correct square
         if (self.hint.x == self.touch_start.tx) then
             self.hint.show = "no"
@@ -665,36 +879,89 @@ function Board:released(id,absX,absY)
         self.touch_end = {}
         self.touch_end.x = (absX-self.x)
         self.touch_end.y = (absY-self.y)
-        --Variables used for swipe detection
-        local dx = (absX-self.x)-self.touch_start.x
-        local dy = (absY-self.y)-self.touch_start.y
-        local len = math.floor(math.sqrt(math.pow(dx,2)+math.pow(dy,2)))
-        local thr = math.floor(self.size/self.grid_size)/2
-        --Swipe up
-        if (dy < 0 and self.touch_start.ty > 1) then
-            if ( ( (dx >= 0 and math.atan(dx/-dy) < (math.pi/6)) or (dx < 0 and math.atan(dx/-dy) > -(math.pi/6)) ) and (len > thr) ) then
-                self:swapTiles(self.touch_start.tx,self.touch_start.ty-1,self.touch_start.tx,self.touch_start.ty,"up")
+        self.touch_end.tx = math.ceil(self.touch_end.x/(self.size/self.grid_size))
+        self.touch_end.ty = math.ceil(self.touch_end.y/(self.size/self.grid_size))
+
+        --If pressed (only called from touches)
+        if (self.touch_start.tx == self.touch_end.tx and self.touch_start.ty == self.touch_end.ty and self.selector.status == "selected") then
+            --Select right
+            if (self.touch_end.tx == self.selector.x+1 and self.touch_end.ty == self.selector.y) then
+                self:swapTiles(self.touch_end.tx-1,self.touch_end.ty,self.touch_end.tx,self.touch_end.ty,"right")
+                self.selector.x = self.selector.x+1
+                self.selector.status = "fadeout"
+            --Select down
+            elseif (self.touch_end.tx == self.selector.x and self.touch_end.ty == self.selector.y+1) then
+                self:swapTiles(self.touch_end.tx,self.touch_end.ty-1,self.touch_end.tx,self.touch_end.ty,"down")
+                self.selector.y = self.selector.y+1
+                self.selector.status = "fadeout"
+            --Select left
+            elseif (self.touch_end.tx == self.selector.x-1 and self.touch_end.ty == self.selector.y) then
+                self:swapTiles(self.touch_end.tx,self.touch_end.ty,self.touch_end.tx+1,self.touch_end.ty,"left")
+                self.selector.x = self.selector.x-1
+                self.selector.status = "fadeout"
+            --Select up
+            elseif (self.touch_end.tx == self.selector.x and self.touch_end.ty == self.selector.y-1) then
+                self:swapTiles(self.touch_end.tx,self.touch_end.ty,self.touch_end.tx,self.touch_end.ty+1,"up")
+                self.selector.y = self.selector.y-1
+                self.selector.status = "fadeout"
+            end
+        --If swiped (not touch and gamepad)
+        else
+            --Variables used for swipe detection
+            local dx = (absX-self.x)-self.touch_start.x
+            local dy = (absY-self.y)-self.touch_start.y
+            local len = math.floor(math.sqrt(math.pow(dx,2)+math.pow(dy,2)))
+            local thr = math.floor(self.size/self.grid_size)/2
+            --Swipe up
+            if (dy < 0 and self.touch_start.ty > 1) then
+                if ( ( (dx >= 0 and math.atan(dx/-dy) < (math.pi/6)) or (dx < 0 and math.atan(dx/-dy) > -(math.pi/6)) ) and (len > thr) ) then
+                    self:swapTiles(self.touch_start.tx,self.touch_start.ty-1,self.touch_start.tx,self.touch_start.ty,"up")
+                    self.selector.y = self.selector.y-1
+                    if (self.id == "gamepad") then
+                        self.selector.status = "hover"
+                    else
+                        self.selector.status = "fadeout"
+                    end
+                end
+            end
+            --Swipe down
+            if (dy > 0 and self.touch_start.ty < self.grid_size) then
+                if ( ( (dx >= 0 and math.atan(dx/-dy) > -(math.pi/6)) or (dx < 0 and math.atan(dx/-dy) < (math.pi/6)) ) and (len > thr) ) then
+                    self:swapTiles(self.touch_start.tx,self.touch_start.ty,self.touch_start.tx,self.touch_start.ty+1,"down")
+                    self.selector.y = self.selector.y+1
+                    if (self.id == "gamepad") then
+                        self.selector.status = "hover"
+                    else
+                        self.selector.status = "fadeout"
+                    end
+                end
+            end
+            --Swipe right
+            if (dx > 0 and self.touch_start.tx < self.grid_size) then
+                if ( ( (dy < 0 and math.atan(-dy/dx) < (math.pi/6)) or (dy >= 0 and math.atan(-dy/dx) > -(math.pi/6)) ) and (len > thr) ) then
+                    self:swapTiles(self.touch_start.tx,self.touch_start.ty,self.touch_start.tx+1,self.touch_start.ty,"right")
+                    self.selector.x = self.selector.x+1
+                    if (self.id == "gamepad") then
+                        self.selector.status = "hover"
+                    else
+                        self.selector.status = "fadeout"
+                    end
+                end
+            end
+            --Swipe left
+            if (dx < 0 and self.touch_start.tx > 1) then
+                if ( ( (dy < 0 and math.atan(-dy/dx) > -(math.pi/6)) or (dy >= 0 and math.atan(-dy/dx) < (math.pi/6)) ) and (len > thr) ) then
+                    self:swapTiles(self.touch_start.tx-1,self.touch_start.ty,self.touch_start.tx,self.touch_start.ty,"left")
+                    self.selector.x = self.selector.x-1
+                    if (self.id == "gamepad") then
+                        self.selector.status = "hover"
+                    else
+                        self.selector.status = "fadeout"
+                    end
+                end
             end
         end
-        --Swipe down
-        if (dy > 0 and self.touch_start.ty < self.grid_size) then
-            if ( ( (dx >= 0 and math.atan(dx/-dy) > -(math.pi/6)) or (dx < 0 and math.atan(dx/-dy) < (math.pi/6)) ) and (len > thr) ) then
-                self:swapTiles(self.touch_start.tx,self.touch_start.ty,self.touch_start.tx,self.touch_start.ty+1,"down")
-            end
-        end
-        --Swipe right
-        if (dx > 0 and self.touch_start.tx < self.grid_size) then
-            if ( ( (dy < 0 and math.atan(-dy/dx) < (math.pi/6)) or (dy >= 0 and math.atan(-dy/dx) > -(math.pi/6)) ) and (len > thr) ) then
-                self:swapTiles(self.touch_start.tx,self.touch_start.ty,self.touch_start.tx+1,self.touch_start.ty,"right")
-            end
-        end
-        --Swipe left
-        if (dx < 0 and self.touch_start.tx > 1) then
-            if ( ( (dy < 0 and math.atan(-dy/dx) > -(math.pi/6)) or (dy >= 0 and math.atan(-dy/dx) < (math.pi/6)) ) and (len > thr) ) then
-                self:swapTiles(self.touch_start.tx-1,self.touch_start.ty,self.touch_start.tx,self.touch_start.ty,"left")
-            end
-        end
-    self.id = nil
+        self.id = nil
     end
 end
 

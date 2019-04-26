@@ -113,6 +113,10 @@ function love.gamepadpressed(joystick, button)
     screen:gamepadpressed(joystick, button)
 end
 
+function love.gamepadreleased(joystick, button)
+    screen:gamepadreleased(joystick, button)
+end
+
 function love.touchpressed(id,x,y)
     screen:touchpressed(id,x,y)
 end
@@ -126,6 +130,38 @@ function love.touchreleased(id,x,y)
 end
 
 --PC CONTROLS
+function love.keypressed(key)
+    if (key == "d") then
+        key = "dpright"
+    elseif (key == "s") then
+        key = "dpdown"
+    elseif (key == "a") then
+        key = "dpleft"
+    elseif (key == "w") then
+        key = "dpup"
+    elseif (key == "l") then
+        key = "a"
+    end
+    screen:gamepadpressed(nil,key)
+end
+
+function love.keyreleased(key)
+    if (key == "d") then
+        key = "dpright"
+    elseif (key == "s") then
+        key = "dpdown"
+    elseif (key == "a") then
+        key = "dpleft"
+    elseif (key == "w") then
+        key = "dpup"
+    elseif (key == "l") then
+        key = "a"
+    elseif (key == "k") then
+        key = "b"
+    end
+    screen:gamepadreleased(nil,key)
+end
+
 function love.mousepressed(x,y)
     screen:touchpressed(1,x,y)
 end

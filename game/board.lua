@@ -1,3 +1,4 @@
+--Contains all necessary code for the board 'object'
 Board = {}
 
 function Board:new(x,y,grid_size,s)

@@ -4,21 +4,14 @@ local F = {}
 --Board object
 local Board1
 --Menu status
-local showMenu = false
+local showMenu = "movein"
 --Which button is currently pressed (used for highlighting)
 local isPressed = {
-    backtogame = false,
-    clock = false,
-    help = false,
     hint = false,
     menu = false,
-    particle = false,
-    save = false,
-    saveandquit = false
 }
 --Animation variables
 local UIPosX = 245
-local UIPosY = -300
 local vx = 0
 local textY = 0
 local rec = {x = 0, y = 0, alpha = 0}
@@ -27,7 +20,7 @@ local hintCountdown = 10
 --"Level" variables
 local animProgress = 0
 local progress = 0
-local level = 0
+local level = 1
 --Function for mapping levels to scores
 local function score(lvl)
     if (lvl > 101) then
@@ -106,6 +99,12 @@ function F:load()
         end
     end
 
+    --Init the menu object
+    Menu1 = Menu
+    Menu1:new(640,-300)
+    Menu1.setting.showParticles = saveData.setting.showParticles
+    Menu1.setting.showClock = saveData.setting.showClock
+
     --Determine 'level' (calculate from score)
     while (saveData.endless.score > score(level+1)) do
         level = level + 1
@@ -138,11 +137,11 @@ function F:update(dt)
         Board1.x = Board1.x + vx*60*dt
         UIPosX = UIPosX - vx*60*dt
         if (Board1.x > 750) then
-            UIPosY = UIPosY + (45-vx)*30*dt
+            Menu1.y = Menu1.y + (45-vx)*30*dt
         end
-        if (UIPosY >= 360) then
+        if (Menu1.y >= 360) then
             showMenu = true
-            UIPosY = 360
+            Menu1.y = 360
         end
     elseif (showMenu == "moveout") then
         if (vx > 2) then
@@ -150,11 +149,11 @@ function F:update(dt)
         end
         Board1.x = Board1.x - vx*60*dt
         UIPosX = UIPosX + vx*60*dt
-        UIPosY = UIPosY - (45-vx)*30*dt
+        Menu1.y = Menu1.y - (45-vx)*30*dt
         if (Board1.x <= 500) then
             Board1.x = 500
             UIPosX = 245
-            UIPosY = -300
+            Menu1.y = -300
             vx = 0
             showMenu = false
         end
@@ -238,49 +237,7 @@ function F:draw()
 
     --Draw menu things
     if (showMenu ~= false) then
-        love.graphics.push("all")
-        love.graphics.translate(640,UIPosY)
-        love.graphics.setColor(1,1,1,1)
-
-        if (isPressed.backtogame) then
-            centeredImage(ui_game_menu_backtogame,0,0)
-        elseif (isPressed.help) then
-            centeredImage(ui_game_menu_help,0,0)
-        elseif (isPressed.save) then
-            centeredImage(ui_game_menu_save,0,0)
-        elseif (isPressed.saveandquit) then
-            centeredImage(ui_game_menu_saveandquit,0,0)
-        else
-            centeredImage(ui_game_menu,0,0)
-        end
-        if (saveData.setting.showParticles) then
-            if (isPressed.particle) then
-                centeredImage(ui_toggle_on_touch,-5,-69,0.7)
-            else
-                centeredImage(ui_toggle_on,-5,-69,0.7)
-            end
-        else
-            if (isPressed.particle) then
-                centeredImage(ui_toggle_off_touch,-5,-69,0.7)
-            else
-                centeredImage(ui_toggle_off,-5,-69,0.7)
-            end
-        end
-        if (saveData.setting.showClock) then
-            if (isPressed.clock) then
-                centeredImage(ui_toggle_on_touch,-5,-30,0.7)
-            else
-                centeredImage(ui_toggle_on,-5,-30,0.7)
-            end
-        else
-            if (isPressed.clock) then
-                centeredImage(ui_toggle_off_touch,-5,-30,0.7)
-            else
-                centeredImage(ui_toggle_off,-5,-30,0.7)
-            end
-        end
-
-        love.graphics.pop()
+        Menu1:draw()
     end
 
     --Draw board/side things
@@ -303,7 +260,6 @@ function F:draw()
         printC("x"..Board1.score_multiplier,2,180,font23)
         love.graphics.setFont(font35)
         printC(commaNumber(Board1.score),2,128,font35)
-        love.graphics.print(score(level+1),0,140)
 
         --Level up text
         if (textY < 0) then
@@ -352,27 +308,9 @@ function F:gamepadreleased(joystick, button)
 end
 
 function F:touchpressed(id,x,y)
-    if (showMenu) then
-        --Toggle particle
-        if (x > 605 and x < 675 and y > 275 and y < 305) then
-            isPressed.particle = true
-        --Toggle clock
-        elseif (x > 605 and x < 675 and y > 315 and y < 345) then
-            isPressed.clock = true
-        --Back to game
-        elseif (x > 480 and x < 800 and y > 365 and y < 435) then
-            isPressed.backtogame = true
-        --Help
-        elseif (x > 480 and x < 635 and y > 445 and y < 515) then
-            isPressed.help = true
-        --Save
-        elseif (x > 645 and x < 800 and y > 445 and y < 515) then
-            isPressed.save = true
-        --Save and quit
-        elseif (x > 480 and x < 800 and y > 525 and y < 595) then
-            isPressed.saveandquit = true
-        end
-    else
+    if (showMenu == true) then
+        Menu1:pressed(x,y)
+    elseif (showMenu == false) then
         --Hint button
         if (x > 175 and x < 315 and y > 500 and y < 550 and hintCountdown == 0) then
             isPressed.hint = true
@@ -385,34 +323,23 @@ function F:touchpressed(id,x,y)
     end
 end
 
-function F:touchmoved(id,x,y)
-
-end
-
 function F:touchreleased(id,x,y)
-    if (showMenu) then
-        --Toggle particle
-        if (x > 605 and x < 675 and y > 275 and y < 305 and isPressed.particle) then
-            saveData.setting.showParticles = not saveData.setting.showParticles
-            Board1.showParticles = saveData.setting.showParticles
-        --Toggle clock
-        elseif (x > 605 and x < 675 and y > 315 and y < 345 and isPressed.clock) then
-            saveData.setting.showClock = not saveData.setting.showClock
-        --Back to game
-        elseif (x > 480 and x < 800 and y > 365 and y < 435 and isPressed.backtogame) then
+    if (showMenu == true) then
+        local result = Menu1:released(x,y)
+        if (result == "hidemenu") then
             showMenu = "moveout"
-        --Help
-        elseif (x > 480 and x < 635 and y > 445 and y < 515 and isPressed.help) then
-
-        --Save
-        elseif (x > 645 and x < 800 and y > 445 and y < 515 and isPressed.save) then
+        elseif (result == "save") then
             save()
-        --Save and quit
-        elseif (x > 480 and x < 800 and y > 525 and y < 595 and isPressed.saveandquit) then
+        elseif (result == "saveandquit") then
             save()
             love.event.quit()
+        elseif (result == "toggleparticle") then
+            saveData.setting.showParticles = not saveData.setting.showParticles
+            Board1.showParticles = saveData.setting.showParticles
+        elseif (result == "toggleclock") then
+            saveData.setting.showClock = not saveData.setting.showClock
         end
-    else
+    elseif (showMenu == false) then
         --Hint button
         if (x > 175 and x < 315 and y > 500 and y < 550 and hintCountdown == 0 and isPressed.hint) then
             Board1.hint.time = 10
@@ -423,10 +350,10 @@ function F:touchreleased(id,x,y)
         else
             Board1:released(id,x,y)
         end
-    end
-    --Reset isPressed
-    for k,v in pairs(isPressed) do
-        isPressed[k] = false
+        --Reset isPressed
+        for k,v in pairs(isPressed) do
+            isPressed[k] = false
+        end
     end
 end
 

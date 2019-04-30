@@ -1,6 +1,7 @@
 require "board"
 require "debugger"
 require "func"
+require "menu"
 require "tile"
 
 --Global constants
@@ -8,7 +9,7 @@ SAVEFILE = "save"
 
 function love.load()
     --Global variables
-    --Holds saveData (most updates in realtime)
+    --Holds saveData (only assume up to date at time of save/load!!)
     saveData = {}
     readData()
 
@@ -122,10 +123,6 @@ function love.touchpressed(id,x,y)
     screen:touchpressed(id,x,y)
 end
 
-function love.touchmoved(id,x,y)
-    screen:touchmoved(id,x,y)
-end
-
 function love.touchreleased(id,x,y)
     screen:touchreleased(id,x,y)
 end
@@ -173,5 +170,4 @@ end
 
 function love.mousemoved(x,y)
     X,Y = x,y
-    screen:touchmoved(1,x,y)
 end

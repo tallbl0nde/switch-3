@@ -1,8 +1,23 @@
 --Constants (folder locations)
+local AUDIOPATH = "resources/sound/"
 local FONTPATH = "resources/font/"
 local IMAGEPATH = "resources/img/"
 
 local function load()
+    --Audio
+    -- local dirs = love.filesystem.getDirectoryItems(AUDIOPATH)
+    -- for i=1,#dirs do
+    --     --Sound effects
+    --     if (dirs[i] == "fx") then
+    --         local files = love.filesystem.getDirectoryItems(AUDIOPATH..dirs[i])
+    --         for j=1,#files do
+    --             _G[dirs[i].."_"..string.match(files[j],"(.+)%.")] = love.audio.newSource(AUDIOPATH..dirs[i].."/"..files[j],"static")
+    --         end
+    --     --Music
+    --     else
+    --         _G["music_"..string.match(dirs[i],"(.+)%.")] = love.audio.newSource(AUDIOPATH.."/"..dirs[i],"stream")
+    --     end
+    -- end
     --Fonts
     font14 = love.graphics.newFont(FONTPATH.."Dosis-Medium.ttf",14)
     font23 = love.graphics.newFont(FONTPATH.."Dosis-Medium.ttf",23)

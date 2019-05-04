@@ -10,14 +10,18 @@ function Menu:new(x,y)
         backtogame = false,
         clock = false,
         help = false,
+        music = false,
         particle = false,
         save = false,
-        saveandquit = false
+        saveandquit = false,
+        sound = false
     }
     --Settings (will be overridden)
     self.setting = {
         showParticles = false,
-        showClock = false
+        showClock = false,
+        musicVolume = 1,
+        soundVolume = 1
     }
 end
 
@@ -67,14 +71,36 @@ function Menu:draw()
         end
     end
 
+    --Audio sliders
+    centeredImage(ui_slider,-30+(185*self.setting.musicVolume),-162)
+    centeredImage(ui_slider,-30+(185*self.setting.soundVolume),-114)
+
     love.graphics.pop()
 end
 
 function Menu:pressed(absX,absY)
     local x = absX - self.x
     local y = absY - self.y
+    --Music
+    if (x > -30 and x < 155 and y > -180 and y < -145) then
+        self.isPressed.music = true
+        self.setting.musicVolume = round((x+30)/185,2)
+        if (self.setting.musicVolume < 0) then
+            self.setting.musicVolume = 0
+        elseif (self.setting.musicVolume > 1) then
+            self.setting.musicVolume = 1
+        end
+    --Sound
+    elseif (x > -30 and x < 155 and y > -135 and y < -95) then
+        self.isPressed.sound = true
+        self.setting.soundVolume = round((x+30)/185,2)
+        if (self.setting.soundVolume < 0) then
+            self.setting.soundVolume = 0
+        elseif (self.setting.soundVolume > 1) then
+            self.setting.soundVolume = 1
+        end
     --Toggle particle
-    if (x > -35 and x < 35 and y > -85 and y < -55) then
+    elseif (x > -35 and x < 35 and y > -85 and y < -55) then
         self.isPressed.particle = true
     --Toggle clock
     elseif (x > -35 and x < 35 and y > -45 and y < -15) then
@@ -91,6 +117,27 @@ function Menu:pressed(absX,absY)
     --Save and quit
     elseif (x > -160 and x < 160 and y > 165 and y < 235) then
         self.isPressed.saveandquit = true
+    end
+end
+
+function Menu:dragged(absX,absY)
+    local x = absX - self.x
+    local y = absY - self.y
+    print(x,y)
+    if (self.isPressed.music) then
+        self.setting.musicVolume = round((x+30)/185,2)
+        if (self.setting.musicVolume < 0) then
+            self.setting.musicVolume = 0
+        elseif (self.setting.musicVolume > 1) then
+            self.setting.musicVolume = 1
+        end
+    elseif (self.isPressed.sound) then
+        self.setting.soundVolume = round((x+30)/185,2)
+        if (self.setting.soundVolume < 0) then
+            self.setting.soundVolume = 0
+        elseif (self.setting.soundVolume > 1) then
+            self.setting.soundVolume = 1
+        end
     end
 end
 
@@ -118,6 +165,11 @@ function Menu:released(absX,absY)
     --Save and quit
     elseif (x > -160 and x < 160 and y > 165 and y < 235 and self.isPressed.saveandquit) then
         ret = "saveandquit"
+    --Audio sliders
+    elseif (self.isPressed.music) then
+        ret = "adjustmusic"
+    elseif (self.isPressed.sound) then
+        ret = "adjustsound"
     end
     --Reset self.isPressed
     for k,v in pairs(self.isPressed) do

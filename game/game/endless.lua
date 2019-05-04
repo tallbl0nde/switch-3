@@ -1,24 +1,31 @@
+--Contains all code related to the endless game mode
 local F = {}
 
 --"Global" variables for this screen/file
 --Board object
 local Board1
 --Menu status
-local showMenu = "movein"
+local showMenu = false
 --Which button is currently pressed (used for highlighting)
 local isPressed = {
     hint = false,
     menu = false,
 }
 --Animation variables
-local UIPosX = 245
-local vx = 0
-local textY = 0
-local rec = {x = 0, y = 0, alpha = 0}
+local anim = {
+    UIPosX = 245,       --Animate X coords of board + info
+    velX = 0,           --Velocity of UIPosX
+    textY = 0,          --Position of "Level Up" text
+    tile = {            --Vars for white fade rectangle in collection
+        x = 0,
+        y = 0,
+        alpha = 0
+    },
+    progress = 0        --Progress bar on level
+}
 --Time until hint is ready
 local hintCountdown = 10
 --"Level" variables
-local animProgress = 0
 local progress = 0
 local level = 1
 --Function for mapping levels to scores
@@ -104,13 +111,15 @@ function F:load()
     Menu1:new(640,-300)
     Menu1.setting.showParticles = saveData.setting.showParticles
     Menu1.setting.showClock = saveData.setting.showClock
+    Menu1.setting.musicVolume = saveData.setting.musicVolume
+    Menu1.setting.soundVolume = saveData.setting.soundVolume
 
     --Determine 'level' (calculate from score)
     while (saveData.endless.score > score(level+1)) do
         level = level + 1
     end
     progress = (Board1.score-score(level))/(score(level+1)-score(level))
-    animProgress = progress
+    anim.progress = progress
 
     --Generate "collection" canvases
     love.graphics.setCanvas(gridCanvas)
@@ -133,28 +142,28 @@ function F:update(dt)
     Board1:update(dt)
     --Animate menu move in/out
     if (showMenu == "movein") then
-        vx = vx + 20*dt
-        Board1.x = Board1.x + vx*60*dt
-        UIPosX = UIPosX - vx*60*dt
+        anim.velX = anim.velX + 20*dt
+        Board1.x = Board1.x + anim.velX*60*dt
+        anim.UIPosX = anim.UIPosX - anim.velX*60*dt
         if (Board1.x > 750) then
-            Menu1.y = Menu1.y + (45-vx)*30*dt
+            Menu1.y = Menu1.y + (45-anim.velX)*30*dt
         end
         if (Menu1.y >= 360) then
             showMenu = true
             Menu1.y = 360
         end
     elseif (showMenu == "moveout") then
-        if (vx > 2) then
-            vx = vx - 19*dt
+        if (anim.velX > 2) then
+            anim.velX = anim.velX - 19*dt
         end
-        Board1.x = Board1.x - vx*60*dt
-        UIPosX = UIPosX + vx*60*dt
-        Menu1.y = Menu1.y - (45-vx)*30*dt
+        Board1.x = Board1.x - anim.velX*60*dt
+        anim.UIPosX = anim.UIPosX + anim.velX*60*dt
+        Menu1.y = Menu1.y - (45-anim.velX)*30*dt
         if (Board1.x <= 500) then
             Board1.x = 500
-            UIPosX = 245
+            anim.UIPosX = 245
             Menu1.y = -300
-            vx = 0
+            anim.velX = 0
             showMenu = false
         end
     --Reduce hint cooldown
@@ -173,9 +182,10 @@ function F:update(dt)
     end
     if (Board1.score >= score(level+1)) then
         level = level+1
-        textY = -1
+        anim.textY = -1
+        playEffect("levelup")
         --Add tile to collection
-        if (level < 101) then
+        if (level <= 101) then
             local i = love.math.random(1,100)
             while (saveData.endless.collection:sub(i,i) == ".") do
                 i = i - 1
@@ -185,9 +195,9 @@ function F:update(dt)
             end
             saveData.endless.collection = saveData.endless.collection:sub(1, i-1) ..'.'.. saveData.endless.collection:sub(i+1)
             --Change animation variables
-            rec.y = math.ceil(i/10)
-            rec.x = i-(rec.y-1)*10
-            rec.alpha = 1
+            anim.tile.y = math.ceil(i/10)
+            anim.tile.x = i-(anim.tile.y-1)*10
+            anim.tile.alpha = 1
             --Regenerate canvas
             generateCollection()
         end
@@ -195,38 +205,38 @@ function F:update(dt)
 
     --Animate progress bar
     --Increase progress on match
-    if (animProgress < progress) then
-        local add = (math.pi*(progress-animProgress)*dt)/1.5
+    if (anim.progress < progress) then
+        local add = (math.pi*(progress-anim.progress)*dt)/1.5
         if (add < 0.0001) then
-            animProgress = progress
+            anim.progress = progress
         end
-        animProgress = animProgress + add
-        if (animProgress > progress) then
-            animProgress = progress
+        anim.progress = anim.progress + add
+        if (anim.progress > progress) then
+            anim.progress = progress
         end
     --Decrease progress on level up
-    elseif (animProgress > progress) then
-        local sub = (math.pi*(animProgress-progress)*dt)/1.5
+    elseif (anim.progress > progress) then
+        local sub = (math.pi*(anim.progress-progress)*dt)/1.5
         if (sub < 0.0001) then
-            animProgress = progress
+            anim.progress = progress
         end
-        animProgress = animProgress - sub
-        if (animProgress < progress) then
-            animProgress = progress
+        anim.progress = anim.progress - sub
+        if (anim.progress < progress) then
+            anim.progress = progress
         end
     end
 
     --Animate level up text
-    if (textY < 0) then
-        textY = textY - 40*dt
-        if (textY < -80) then
-            textY = 0
+    if (anim.textY < 0) then
+        anim.textY = anim.textY - 40*dt
+        if (anim.textY < -80) then
+            anim.textY = 0
         end
     end
 
     --Animate new tile in collection
-    if (rec.alpha > 0) then
-        rec.alpha = rec.alpha - dt*0.8
+    if (anim.tile.alpha > 0) then
+        anim.tile.alpha = anim.tile.alpha - dt*0.8
     end
 end
 
@@ -245,11 +255,11 @@ function F:draw()
         Board1:draw()
 
         love.graphics.push("all")
-        love.graphics.translate(UIPosX,0)
+        love.graphics.translate(anim.UIPosX,0)
         love.graphics.setColor(1,1,1,1)
 
         --Top 'cluster'
-        love.graphics.rectangle("fill",-125,97,250*animProgress,65)
+        love.graphics.rectangle("fill",-125,97,250*anim.progress,65)
         centeredImage(ui_top_cluster,0,130)
         love.graphics.setFont(font23)
         if (saveData.setting.showClock) then
@@ -262,9 +272,9 @@ function F:draw()
         printC(commaNumber(Board1.score),2,128,font35)
 
         --Level up text
-        if (textY < 0) then
-            love.graphics.setColor(1,1,1,(55+textY)/43)
-            centeredImage(ui_level_up_text,0,43+textY)
+        if (anim.textY < 0) then
+            love.graphics.setColor(1,1,1,(55+anim.textY)/43)
+            centeredImage(ui_level_up_text,0,43+anim.textY)
             love.graphics.setColor(1,1,1,1)
         end
 
@@ -274,9 +284,9 @@ function F:draw()
         love.graphics.setColor(1,1,1,1)
         love.graphics.draw(collectCanvas,-75,270)
         centeredImage(endless_border,0,347)
-        if (rec.alpha > 0) then
-            love.graphics.setColor(1,1,1,rec.alpha)
-            love.graphics.rectangle("fill",-75+(15*(rec.x-1)),270+(15*(rec.y-1)),15,15)
+        if (anim.tile.alpha > 0) then
+            love.graphics.setColor(1,1,1,anim.tile.alpha)
+            love.graphics.rectangle("fill",-75+(15*(anim.tile.x-1)),270+(15*(anim.tile.y-1)),15,15)
             love.graphics.setColor(1,1,1,1)
         end
 
@@ -323,10 +333,21 @@ function F:touchpressed(id,x,y)
     end
 end
 
+function F:touchmoved(id,x,y)
+    if (showMenu == true) then
+        Menu1:dragged(x,y)
+    end
+end
+
 function F:touchreleased(id,x,y)
     if (showMenu == true) then
         local result = Menu1:released(x,y)
-        if (result == "hidemenu") then
+        if (result == "adjustmusic") then
+            saveData.setting.musicVolume = Menu1.setting.musicVolume
+            adjustVolume()
+        elseif (result == "adjustsound") then
+            saveData.setting.soundVolume = Menu1.setting.soundVolume
+        elseif (result == "hidemenu") then
             showMenu = "moveout"
         elseif (result == "save") then
             save()
@@ -399,6 +420,8 @@ save = function()
     saveData.endless.gemType = gt
     --Save score
     saveData.endless.score = Board1.score
+    --Save settings
+
     --Write to file
     writeData()
 end

@@ -1,3 +1,4 @@
+require "audio"
 require "board"
 require "debugger"
 require "func"
@@ -24,6 +25,8 @@ function love.load()
     screen:load()
     addDebug("X")
     addDebug("Y")
+    addDebug("musicVol")
+    addDebug("soundVol")
 end
 
 function love.update(dt)
@@ -39,6 +42,8 @@ function love.update(dt)
     end
     screen:update(dt)
     updateDebug(dt)
+    musicVol = saveData.setting.musicVolume
+    soundVol = saveData.setting.soundVolume
 end
 
 function love.draw()
@@ -123,6 +128,10 @@ function love.touchpressed(id,x,y)
     screen:touchpressed(id,x,y)
 end
 
+function love.touchmoved(id,x,y)
+    screen:touchmoved(id,x,y)
+end
+
 function love.touchreleased(id,x,y)
     screen:touchreleased(id,x,y)
 end
@@ -169,5 +178,6 @@ function love.mousereleased(x,y)
 end
 
 function love.mousemoved(x,y)
+    screen:touchmoved(1,x,y)
     X,Y = x,y
 end

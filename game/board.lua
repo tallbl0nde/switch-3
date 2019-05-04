@@ -65,6 +65,7 @@ function Board:new(x,y,grid_size,s)
     --Variables for score related things
     self.score = 0
     self.score_multiplier = 1
+    self.match_number = 1
     --Variable for particles
     self.showParticles = true
     --Variables for hint icon (show: fade in/out; draw: actually draw)
@@ -89,6 +90,7 @@ function Board:update(dt)
                     if (self.tiles[x][y].anim.y > 0) then
                         self.tiles[x][y].anim.y = 0
                         self.tiles[x][y].anim.status = ""
+                        --playEffect("tiledrop")
                     end
                 end
 
@@ -514,6 +516,7 @@ function Board:update(dt)
         local inc = self:analyse()
         if (inc == false) then
             self.score_multiplier = 1
+            self.match_number = 1
             -- If no matches shuffle the board
             if (not self:hasMatch()) then
                 self.state = "preshuffle"
@@ -1210,6 +1213,10 @@ function Board:analyse()
                         break
                     end
                 end
+                playEffect("match"..self.match_number)
+                if (self.match_number < 5) then
+                    self.match_number = self.match_number
+                end
                 self.score_multiplier = self.score_multiplier + 1
             end
         end
@@ -1356,6 +1363,10 @@ function Board:analyse()
                             self.tiles[x][y+i].analyzed = true
                         end
                         self:addScore(100,100,x,y+1)
+                    end
+                    playEffect("match"..self.match_number)
+                    if (self.match_number < 5) then
+                        self.match_number = self.match_number + 1
                     end
                     self.score_multiplier = self.score_multiplier + 1
                 end

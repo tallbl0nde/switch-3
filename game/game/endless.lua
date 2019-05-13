@@ -109,10 +109,6 @@ function F:load()
     --Init the menu object
     Menu1 = Menu
     Menu1:new(640,-300)
-    Menu1.setting.showParticles = saveData.setting.showParticles
-    Menu1.setting.showClock = saveData.setting.showClock
-    Menu1.setting.musicVolume = saveData.setting.musicVolume
-    Menu1.setting.soundVolume = saveData.setting.soundVolume
 
     --Determine 'level' (calculate from score)
     while (saveData.endless.score > score(level+1)) do
@@ -183,7 +179,7 @@ function F:update(dt)
     if (Board1.score >= score(level+1)) then
         level = level+1
         anim.textY = -1
-        playEffect("levelup")
+        --Audio:playEffect("levelup")
         --Add tile to collection
         if (level <= 101) then
             local i = love.math.random(1,100)
@@ -343,10 +339,8 @@ function F:touchreleased(id,x,y)
     if (showMenu == true) then
         local result = Menu1:released(x,y)
         if (result == "adjustmusic") then
-            saveData.setting.musicVolume = Menu1.setting.musicVolume
-            adjustVolume()
+            Audio:adjustMusicVol()
         elseif (result == "adjustsound") then
-            saveData.setting.soundVolume = Menu1.setting.soundVolume
         elseif (result == "hidemenu") then
             showMenu = "moveout"
         elseif (result == "save") then
@@ -420,8 +414,6 @@ save = function()
     saveData.endless.gemType = gt
     --Save score
     saveData.endless.score = Board1.score
-    --Save settings
-
     --Write to file
     writeData()
 end

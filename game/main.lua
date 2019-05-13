@@ -1,32 +1,63 @@
-require "audio"
 require "board"
 require "debugger"
 require "func"
 require "menu"
 require "tile"
+Audio = require("audio")
 
 --Global constants
 SAVEFILE = "save"
+VERSION = "0.2a"
 
 function love.load()
     --Global variables
-    --Holds saveData (only assume up to date at time of save/load!!)
-    saveData = {}
+    --Default saveData which should be overwritten (only assume up to date at time of save/load!!)
+    saveData = {
+        version = VERSION,
+        endless = {
+            collection = "----------------------------------------------------------------------------------------------------",
+            gemColour = -1,
+            gemsMatched = 0,
+            gemType = -1,
+            playtime = 0,
+            score = 0
+        },
+        setting = {
+            musicVolume = 1,
+            showClock = false,
+            showParticles = true,
+            soundVolume = 1
+        },
+        stats = {
+            highestCascade = 0,
+            explosionMade = 0,
+            laserMade = 0,
+            obliterations = 0,
+            removerMade = 0
+        }
+    }
     readData()
 
-    --Screen points to lua file to 'run'
-    screen = require "game/endless"
+    --Check save version
+    if (saveData.version ~= VERSION) then
+        error("Save version does not match game version!")
+    end
 
     --Set the seed for RNG :D
     love.math.setRandomSeed(love.timer.getTime())
 
     --Load all assets required into RAM
     require("load")()
-    screen:load()
     addDebug("X")
     addDebug("Y")
-    addDebug("musicVol")
-    addDebug("soundVol")
+    addDebug("sounds")
+
+    --Init the Audio object
+    Audio:init()
+
+    --Screen points to lua file to 'run'
+    screen = require "game/endless"
+    screen:load()
 end
 
 function love.update(dt)
@@ -40,10 +71,12 @@ function love.update(dt)
     else
         systemTime = os.date("%H").." "..os.date("%M")
     end
+    Audio:update()
     screen:update(dt)
     updateDebug(dt)
     musicVol = saveData.setting.musicVolume
     soundVol = saveData.setting.soundVolume
+    sounds = #Audio.fxSources
 end
 
 function love.draw()
@@ -52,60 +85,46 @@ function love.draw()
 end
 
 --DATA MANAGEMENT
-function writeData(init)
+function writeData()
     local data = ""
-    --Initalise with defaults if necessary
-    if (init) then
-        data = data.."endless.gemColour:-1".."\n"
-        data = data.."endless.gemType:-1".."\n"
-        data = data.."endless.collection:----------------------------------------------------------------------------------------------------".."\n"
-        data = data.."endless.score:0".."\n"
-        data = data.."playtime:0".."\n"
-        data = data.."setting.musicVolume:1".."\n"
-        data = data.."setting.showClock:false".."\n"
-        data = data.."setting.showParticles:true".."\n"
-        data = data.."setting.soundVolume:1".."\n"
-    else
-        --Otherwise save normally
-        for k, v in pairs(saveData) do
-            if (type(v) == "table") then
-                for K, V in pairs(v) do
-                    data = data..k.."."..K..":"..tostring(V).."\n"
-                end
-            else
-                data = data..k..":"..tostring(v).."\n"
+    --Concatenate values
+    for k, v in pairs(saveData) do
+        if (type(v) == "table") then
+            for K, V in pairs(v) do
+                data = data..k.."."..K..":"..tostring(V).."\n"
             end
+        else
+            data = data..k..":"..tostring(v).."\n"
         end
     end
     love.filesystem.write(SAVEFILE,data)
 end
 
 function readData()
-    --Check if exists and create if necessary
-    if (love.filesystem.getInfo(SAVEFILE) == nil) then
-        writeData(true)
-    end
-    --Read file into table
-    local dir = love.filesystem.getSaveDirectory().."/"
-    for line in io.lines(dir..SAVEFILE) do
-        local k, v = string.match(line, "(.*):(.*)")
-        --Change to correct type
-        if (tonumber(v) ~= nil) then
-            v = tonumber(v)
-        elseif (v == "true") then
-            v = true
-        elseif (v == "false") then
-            v = false
-        end
-        --Create another layer of tables if necessary
-        if (string.match(k, "(.*)%.(.*)")) then
-            local t, k = string.match(k, "(.*)%.(.*)")
-            if (saveData[t] == nil) then
-                saveData[t] = {}
+    --Check if exists
+    if (love.filesystem.getInfo(SAVEFILE) ~= nil) then
+        --Read file into table
+        local dir = love.filesystem.getSaveDirectory().."/"
+        for line in io.lines(dir..SAVEFILE) do
+            local k, v = string.match(line, "(.*):(.*)")
+            --Change to correct type
+            if (tonumber(v) ~= nil) then
+                v = tonumber(v)
+            elseif (v == "true") then
+                v = true
+            elseif (v == "false") then
+                v = false
             end
-            saveData[t][k] = v
-        else
-            saveData[k] = v
+            --Create another layer of tables if necessary
+            if (string.match(k, "(.*)%.(.*)")) then
+                local t, k = string.match(k, "(.*)%.(.*)")
+                if (saveData[t] == nil) then
+                    saveData[t] = {}
+                end
+                saveData[t][k] = v
+            else
+                saveData[k] = v
+            end
         end
     end
 end

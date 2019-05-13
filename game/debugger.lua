@@ -1,4 +1,4 @@
-local show = 2
+local show = 1
 local vars = {}
 local runTime = 0
 local t = 0

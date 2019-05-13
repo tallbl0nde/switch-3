@@ -16,13 +16,6 @@ function Menu:new(x,y)
         saveandquit = false,
         sound = false
     }
-    --Settings (will be overridden)
-    self.setting = {
-        showParticles = false,
-        showClock = false,
-        musicVolume = 1,
-        soundVolume = 1
-    }
 end
 
 function Menu:draw()
@@ -44,7 +37,7 @@ function Menu:draw()
     end
 
     --Draw toggles based on state
-    if (self.setting.showParticles) then
+    if (saveData.setting.showParticles) then
         if (self.isPressed.particle) then
             centeredImage(ui_toggle_on_touch,-5,-69,0.7)
         else
@@ -57,7 +50,7 @@ function Menu:draw()
             centeredImage(ui_toggle_off,-5,-69,0.7)
         end
     end
-    if (self.setting.showClock) then
+    if (saveData.setting.showClock) then
         if (self.isPressed.clock) then
             centeredImage(ui_toggle_on_touch,-5,-30,0.7)
         else
@@ -72,8 +65,8 @@ function Menu:draw()
     end
 
     --Audio sliders
-    centeredImage(ui_slider,-30+(185*self.setting.musicVolume),-162)
-    centeredImage(ui_slider,-30+(185*self.setting.soundVolume),-114)
+    centeredImage(ui_slider,-30+(185*saveData.setting.musicVolume),-162)
+    centeredImage(ui_slider,-30+(185*saveData.setting.soundVolume),-114)
 
     love.graphics.pop()
 end
@@ -84,20 +77,21 @@ function Menu:pressed(absX,absY)
     --Music
     if (x > -30 and x < 155 and y > -180 and y < -145) then
         self.isPressed.music = true
-        self.setting.musicVolume = round((x+30)/185,2)
-        if (self.setting.musicVolume < 0) then
-            self.setting.musicVolume = 0
-        elseif (self.setting.musicVolume > 1) then
-            self.setting.musicVolume = 1
+        saveData.setting.musicVolume = round((x+30)/185,2)
+        if (saveData.setting.musicVolume < 0) then
+            saveData.setting.musicVolume = 0
+        elseif (saveData.setting.musicVolume > 1) then
+            saveData.setting.musicVolume = 1
         end
+        Audio:adjustMusicVol()
     --Sound
     elseif (x > -30 and x < 155 and y > -135 and y < -95) then
         self.isPressed.sound = true
-        self.setting.soundVolume = round((x+30)/185,2)
-        if (self.setting.soundVolume < 0) then
-            self.setting.soundVolume = 0
-        elseif (self.setting.soundVolume > 1) then
-            self.setting.soundVolume = 1
+        saveData.setting.soundVolume = round((x+30)/185,2)
+        if (saveData.setting.soundVolume < 0) then
+            saveData.setting.soundVolume = 0
+        elseif (saveData.setting.soundVolume > 1) then
+            saveData.setting.soundVolume = 1
         end
     --Toggle particle
     elseif (x > -35 and x < 35 and y > -85 and y < -55) then
@@ -123,20 +117,20 @@ end
 function Menu:dragged(absX,absY)
     local x = absX - self.x
     local y = absY - self.y
-    print(x,y)
     if (self.isPressed.music) then
-        self.setting.musicVolume = round((x+30)/185,2)
-        if (self.setting.musicVolume < 0) then
-            self.setting.musicVolume = 0
-        elseif (self.setting.musicVolume > 1) then
-            self.setting.musicVolume = 1
+        saveData.setting.musicVolume = round((x+30)/185,2)
+        if (saveData.setting.musicVolume < 0) then
+            saveData.setting.musicVolume = 0
+        elseif (saveData.setting.musicVolume > 1) then
+            saveData.setting.musicVolume = 1
         end
+        Audio:adjustMusicVol()
     elseif (self.isPressed.sound) then
-        self.setting.soundVolume = round((x+30)/185,2)
-        if (self.setting.soundVolume < 0) then
-            self.setting.soundVolume = 0
-        elseif (self.setting.soundVolume > 1) then
-            self.setting.soundVolume = 1
+        saveData.setting.soundVolume = round((x+30)/185,2)
+        if (saveData.setting.soundVolume < 0) then
+            saveData.setting.soundVolume = 0
+        elseif (saveData.setting.soundVolume > 1) then
+            saveData.setting.soundVolume = 1
         end
     end
 end
@@ -147,11 +141,11 @@ function Menu:released(absX,absY)
     local ret
     --Toggle particle
     if (x > -35 and x < 35 and y > -85 and y < -55 and self.isPressed.particle) then
-        self.setting.showParticles = not self.setting.showParticles
+        saveData.setting.showParticles = not saveData.setting.showParticles
         ret = "toggleparticle"
     --Toggle clock
     elseif (x > -35 and x < 35 and y > -45 and y < -15 and self.isPressed.clock) then
-        self.setting.showClock = not self.setting.showClock
+        saveData.setting.showClock = not saveData.setting.showClock
         ret = "toggleclock"
     --Back to game
     elseif (x > -160 and x < 160 and y > 5 and y < 75 and self.isPressed.backtogame) then

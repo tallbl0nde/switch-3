@@ -1213,7 +1213,7 @@ function Board:analyse()
                         break
                     end
                 end
-                playEffect("match"..self.match_number)
+                -- playEffect("match"..self.match_number)
                 if (self.match_number < 5) then
                     self.match_number = self.match_number
                 end
@@ -1364,7 +1364,7 @@ function Board:analyse()
                         end
                         self:addScore(100,100,x,y+1)
                     end
-                    playEffect("match"..self.match_number)
+                    -- playEffect("match"..self.match_number)
                     if (self.match_number < 5) then
                         self.match_number = self.match_number + 1
                     end

@@ -4,8 +4,6 @@ local F = {}
 --"Global" variables for this screen/file
 --Board object
 local Board1
---Menu status
-local showMenu = false
 --Which button is currently pressed (used for highlighting)
 local isPressed = {
     hint = false,
@@ -136,19 +134,21 @@ end
 function F:update(dt)
     --Update board stuff
     Board1:update(dt)
+    Menu1:update(dt)
     --Animate menu move in/out
-    if (showMenu == "movein") then
+    if (Menu1.show == "movein") then
         anim.velX = anim.velX + 20*dt
         Board1.x = Board1.x + anim.velX*60*dt
         anim.UIPosX = anim.UIPosX - anim.velX*60*dt
         if (Board1.x > 750) then
             Menu1.y = Menu1.y + (45-anim.velX)*30*dt
         end
-        if (Menu1.y >= 360) then
-            showMenu = true
+        if (Board1.x >= 2110) then
+            Menu1.show = true
+            Board1.x = 2110
             Menu1.y = 360
         end
-    elseif (showMenu == "moveout") then
+    elseif (Menu1.show == "moveout") then
         if (anim.velX > 2) then
             anim.velX = anim.velX - 19*dt
         end
@@ -160,10 +160,10 @@ function F:update(dt)
             anim.UIPosX = 245
             Menu1.y = -300
             anim.velX = 0
-            showMenu = false
+            Menu1.show = false
         end
     --Reduce hint cooldown
-    elseif (showMenu == false) then
+    elseif (Menu1.show == false) then
         if (hintCountdown > 0) then
             hintCountdown = hintCountdown - dt
         else
@@ -242,12 +242,12 @@ function F:draw()
     love.graphics.draw(bg_background,0,0,0,2/3,2/3)
 
     --Draw menu things
-    if (showMenu ~= false) then
+    if (Menu1.show ~= false) then
         Menu1:draw()
     end
 
     --Draw board/side things
-    if (showMenu ~= true) then
+    if (Menu1.show ~= true) then
         Board1:draw()
 
         love.graphics.push("all")
@@ -306,17 +306,59 @@ function F:draw()
 end
 
 function F:gamepadpressed(joystick, button)
-    Board1:gamepadPressed(button)
+    if (Menu1.show == false) then
+        if (button == "plus") then
+            isPressed.menu = true
+        elseif (button == "minus" and hintCountdown == 0) then
+            isPressed.hint = true
+        else
+            Board1:gamepadPressed(button)
+        end
+    elseif (Menu1.show == true) then
+        Menu1:gamepadPressed(button)
+    end
 end
 
 function F:gamepadreleased(joystick, button)
-    Board1:gamepadReleased(button)
+    if (Menu1.show == false) then
+        if (button == "plus" and isPressed.menu) then
+            isPressed.menu = false
+            Menu1.show = "movein"
+            Menu1.highlight.active = true
+            Menu1:moveHighlight()
+        elseif (button == "minus" and isPressed.hint) then
+            isPressed.hint = false
+            Board1.hint.time = 10
+            hintCountdown = 10
+        else
+            Board1:gamepadReleased(button)
+        end
+    elseif (Menu1.show == true) then
+        local result = Menu1:gamepadReleased(button)
+        if (result == "adjustmusic") then
+            Audio:adjustMusicVol()
+        elseif (result == "adjustsound") then
+
+        elseif (result == "hidemenu") then
+            Menu1.show = "moveout"
+        elseif (result == "save") then
+            save()
+        elseif (result == "saveandquit") then
+            save()
+            love.event.quit()
+        elseif (result == "toggleparticle") then
+            saveData.setting.showParticles = not saveData.setting.showParticles
+            Board1.showParticles = saveData.setting.showParticles
+        elseif (result == "toggleclock") then
+            saveData.setting.showClock = not saveData.setting.showClock
+        end
+    end
 end
 
 function F:touchpressed(id,x,y)
-    if (showMenu == true) then
+    if (Menu1.show == true) then
         Menu1:pressed(x,y)
-    elseif (showMenu == false) then
+    elseif (Menu1.show == false) then
         --Hint button
         if (x > 175 and x < 315 and y > 500 and y < 550 and hintCountdown == 0) then
             isPressed.hint = true
@@ -330,19 +372,20 @@ function F:touchpressed(id,x,y)
 end
 
 function F:touchmoved(id,x,y)
-    if (showMenu == true) then
+    if (Menu1.show == true) then
         Menu1:dragged(x,y)
     end
 end
 
 function F:touchreleased(id,x,y)
-    if (showMenu == true) then
+    if (Menu1.show == true) then
         local result = Menu1:released(x,y)
         if (result == "adjustmusic") then
             Audio:adjustMusicVol()
         elseif (result == "adjustsound") then
+
         elseif (result == "hidemenu") then
-            showMenu = "moveout"
+            Menu1.show = "moveout"
         elseif (result == "save") then
             save()
         elseif (result == "saveandquit") then
@@ -354,14 +397,15 @@ function F:touchreleased(id,x,y)
         elseif (result == "toggleclock") then
             saveData.setting.showClock = not saveData.setting.showClock
         end
-    elseif (showMenu == false) then
+    elseif (Menu1.show == false) then
         --Hint button
         if (x > 175 and x < 315 and y > 500 and y < 550 and hintCountdown == 0 and isPressed.hint) then
             Board1.hint.time = 10
             hintCountdown = 10
         --Menu button
         elseif (x > 140 and x < 350 and y > 560 and y < 650 and isPressed.menu) then
-            showMenu = "movein"
+            Menu1.show = "movein"
+            Menu1.highlight.active = false
         else
             Board1:released(id,x,y)
         end

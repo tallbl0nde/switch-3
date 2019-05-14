@@ -74,8 +74,6 @@ function love.update(dt)
     Audio:update()
     screen:update(dt)
     updateDebug(dt)
-    musicVol = saveData.setting.musicVolume
-    soundVol = saveData.setting.soundVolume
     sounds = #Audio.fxSources
 end
 
@@ -131,10 +129,8 @@ end
 
 --SWITCH CONTROLS
 function love.gamepadpressed(joystick, button)
-    if (button == "minus") then
+    if (button == "zl") then
         toggleDebug()
-    elseif (button == "plus") then
-        love.event.quit()
     end
     screen:gamepadpressed(joystick, button)
 end
@@ -167,6 +163,12 @@ function love.keypressed(key)
         key = "dpup"
     elseif (key == "l") then
         key = "a"
+    elseif (key == "k") then
+        key = "b"
+    elseif (key == "o") then
+        key = "plus"
+    elseif (key == "q") then
+        key = "minus"
     end
     screen:gamepadpressed(nil,key)
 end
@@ -184,6 +186,10 @@ function love.keyreleased(key)
         key = "a"
     elseif (key == "k") then
         key = "b"
+    elseif (key == "o") then
+        key = "plus"
+    elseif (key == "q") then
+        key = "minus"
     end
     screen:gamepadreleased(nil,key)
 end

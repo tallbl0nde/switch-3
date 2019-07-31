@@ -34,6 +34,10 @@ end
 
 --Draw centered text
 function printC(txt,x,y,size)
+    -- Prevent a random crash (from a variable being nil??)
+    if (txt == nil) then
+        txt = ""
+    end
 	local w = round(size:getWidth(txt)/2)
 	local h = round(size:getHeight(txt)/2)
 	love.graphics.print(txt,x-w,y-h)

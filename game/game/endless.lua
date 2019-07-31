@@ -51,7 +51,6 @@ local colorMap = {  {{0.91,0.56,0.20,1},{0.91,0.56,0.20,1},{0.91,0.56,0.20,1},{0
 }
 --Variables storing canvas
 local collectCanvas = love.graphics.newCanvas(150,150)
-local gridCanvas = love.graphics.newCanvas(150,150)
 
 --Local functions (not accessible outside file)
 local save
@@ -115,19 +114,7 @@ function F:load()
     progress = (Board1.score-score(level))/(score(level+1)-score(level))
     anim.progress = progress
 
-    --Generate "collection" canvases
-    love.graphics.setCanvas(gridCanvas)
-    for x=1,10 do
-        for y=1,10 do
-            if ((x+y)%2 == 0) then
-                love.graphics.setColor(0.04,0.04,0.04,1)
-            else
-                love.graphics.setColor(0.07,0.07,0.07,1)
-            end
-            love.graphics.rectangle("fill",(x-1)*15,(y-1)*15,15,15)
-        end
-    end
-    love.graphics.setCanvas()
+    --Generate "collection" canvas
     generateCollection()
 end
 
@@ -276,7 +263,7 @@ function F:draw()
 
         --Collection (middle)
         love.graphics.setColor(1,1,1,0.7)
-        love.graphics.draw(gridCanvas,-75,270)
+        love.graphics.draw(endless_grid,-75,270)
         love.graphics.setColor(1,1,1,1)
         love.graphics.draw(collectCanvas,-75,270)
         centeredImage(endless_border,0,347)
